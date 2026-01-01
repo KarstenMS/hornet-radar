@@ -5,8 +5,11 @@ from yolov5.models.yolo import Detectionmodel
 
 torch.serialization.add_safe_globals([DetectionModel])
 
-ROOT = "/mnt/c/Hornet/yolov5_env/"
-MODEL_PATH = os.path.join(ROOT, "yolov5/models/yolov5s-all-data.pt")
+ROOT = "/home/hornet1"
+
+
+
+MODEL_PATH = os.path.join(ROOT, "hornet-radar/models/yolov5s-all-data.pt")
 YOLO_DIR = os.path.join(ROOT, "yolov5")
 
 model = torch.hub.load(YOLO_DIR, "custom", path=MODEL_PATH, source="local")
