@@ -63,3 +63,30 @@ for image_name in os.listdir(IMAGES_FOLDER):
             ah_count += 1
         elif p[-1] == 0: # class_id 0 = European hornet
             eh_count += 1
+
+    # 4️ Create JSON payload
+    now = datetime.datetime.now().isoformat()
+    data = {
+        "pi_id": PI_ID,
+        "frame_id": f"{PI_ID}_Frame_{frame_id}",
+        "timestamp": now,
+        "species": "asian_hornet" if ah_count > 0 else "european_hornet",
+        "approach_angle": None,
+        "departure_angle": None,
+        "latitude": LATITUDE,
+        "longitude": LONGITUDE
+    }
+
+    # 5️ Send JSON to Supabase
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # For now, comment this out while testing locally
+    # response = requests.post(SUPABASE_URL, headers=headers, json=data)
+    # print(response.status_code, response.text)
+
+    # Print the JSON for verification
+    print(json.dumps(data, indent=2))
