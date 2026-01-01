@@ -24,8 +24,8 @@ ROOT = "/home/hornet1/hornet-radar"
 
 # Connection configuration
 
-SUPABASE_URL = "https://hornet-radar.supabase.co/rest/v1/sightings"
-SUPABASE_KEY = "sbp_d35e22fc751d0252289178a3561c9583bbcc9abc"
+SUPABASE_URL = "https://lebtnjdpjntaqheahjoi.supabase.co/rest/v1/sightings"
+SUPABASE_KEY = "sb_publishable_yRnBJ6G8mN-44O_8iNKltw_J2_-899y"
 
 
 # Initialising
