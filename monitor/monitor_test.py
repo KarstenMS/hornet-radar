@@ -1,15 +1,12 @@
 import torch
 from ultralytics import YOLO
 import os
-from yolov5.models.yolo import Detectionmodel
 
-torch.serialization.add_safe_globals([DetectionModel])
-
-ROOT = "/home/hornet1"
+ROOT = "/home/hornet1/hornet-radar"
 
 
 
-MODEL_PATH = os.path.join(ROOT, "hornet-radar/models/yolov5s-all-data.pt")
+MODEL_PATH = os.path.join(ROOT, "model/yolov5s-all-data.pt")
 YOLO_DIR = os.path.join(ROOT, "yolov5")
 
 model = torch.hub.load(YOLO_DIR, "custom", path=MODEL_PATH, source="local")
