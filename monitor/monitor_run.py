@@ -7,7 +7,9 @@ import datetime
 import requests
 import json
 import cv2
+import warnings
 
+warnings.filterwarnings("ignore", category=FutureWarning) # For removing Torch FutureWarnings
 
 # === CONFIGURATION ===
 
@@ -29,7 +31,7 @@ SUPABASE_KEY = "sbp_d35e22fc751d0252289178a3561c9583bbcc9abc"
 # Initialising
 MODEL_PATH = os.path.join(ROOT, "model/yolov5s-all-data.pt")
 YOLO_DIR = os.path.join(ROOT, "yolov5")
-IMAGES_FOLDER = os.path.join(ROOT, "detections/frames")     #for testing
+IMAGES_FOLDER = os.path.join(ROOT, "detections/frames")     # For testing
 
 
 model = torch.hub.load(YOLO_DIR, "custom", path=MODEL_PATH, source="local")
