@@ -40,7 +40,7 @@ model.conf = 0.8 # Optional: confidence threshold for detections
 frame_id = 0
 
 for image_name in os.listdir(IMAGES_FOLDER):
-    if not image_name.endswith(".jpg"):
+    if not image_name.endswith(".jpeg"):
         continue
 
     image_path = os.path.join(IMAGES_FOLDER, image_name)
