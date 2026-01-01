@@ -86,9 +86,9 @@ for image_name in os.listdir(IMAGES_FOLDER):
         "Content-Type": "application/json"
     }
 
-    # For now, comment this out while testing locally
-    # response = requests.post(SUPABASE_URL, headers=headers, json=data)
-    # print(response.status_code, response.text)
+    response = requests.post(SUPABASE_URL, headers=headers, json=data)
 
-    # Print the JSON for verification
-    print(json.dumps(data, indent=2))
+    if response.status_code == 201:
+        print("Successfully uploaded detection!")
+    else:
+        print("Upload failed:", response.status_code, response.text)
