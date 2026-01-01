@@ -46,3 +46,20 @@ for image_name in os.listdir(IMAGES_FOLDER):
     image_path = os.path.join(IMAGES_FOLDER, image_name)
     frame_id += 1
     print(f"Processing {image_name} ...")
+
+    # 1️ Load the image
+    img = cv2.imread(image_path)
+    if img is None:
+        continue
+
+    # 2️ Run YOLO inference
+    results = model(img)
+    predictions = results.pred[0]
+
+    # 3️ Count detected hornet species
+    ah_count, eh_count = 0, 0
+    for p in predictions:
+        if p[-1] == 1:   # class_id 1 = Asian hornet
+            ah_count += 1
+        elif p[-1] == 0: # class_id 0 = European hornet
+            eh_count += 1
