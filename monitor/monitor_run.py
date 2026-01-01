@@ -9,7 +9,7 @@ import json
 import cv2
 import warnings
 
-warnings.filterwarnings("ignore", category=FutureWarning) # For removing Torch FutureWarnings
+warnings.filterwarnings("ignore", category=FutureWarning) # For suppressing Torch FutureWarnings
 
 # === CONFIGURATION ===
 
