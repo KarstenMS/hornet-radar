@@ -120,7 +120,7 @@ for image_name in os.listdir(FRAMES_DIR):
 
     # Upload and get public URL
     image_url = upload_image_to_supabase(local_image_path, image_name)
-    thumb_url = upload_image_to_supabase(local_image_path, image_name)
+    thumb_url = upload_image_to_supabase(local_thumb_path, thumb_name)
 
     # Add it to your JSON data
     if image_url:
