@@ -83,8 +83,9 @@ def video_tracking(videos_dir, model):
         trajectory = []
         tracking_active = False
         frame_id = 0
+        video_path = os.path.join(videos_dir, video_name)
 
-        cap = cv2.VideoCapture(video_name)
+        cap = cv2.VideoCapture(video_path)
         ret, frame = cap.read()
         if not ret:
             print(f"Could not read {video_name}.") 
@@ -160,7 +161,7 @@ def main():
 
     if args.images:
         image_recognition(FRAMES_DIR, model)
-    elif args.video:
+    elif args.videos:
         video_tracking(VIDEOS_DIR, model)
 
         
