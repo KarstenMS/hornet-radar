@@ -34,7 +34,7 @@ def image_recognition(frames_dir, model):
             continue
 
         # --- YOLO detection ---
-        predictions = run_detection(img, model)
+        predictions = run_detection(frame, model)
         ah_count, eh_count = count_species(predictions)
 
         # --- Skip if no hornets detected ---
@@ -160,8 +160,10 @@ def main():
     
 
     if args.images:
+        print(f"Reading {FRAMES_DIR} directory.") 
         image_recognition(FRAMES_DIR, model)
     elif args.videos:
+        print(f"Reading {VIDEOS_DIR} directory.") 
         video_tracking(VIDEOS_DIR, model)
 
         
