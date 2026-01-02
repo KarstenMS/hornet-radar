@@ -12,9 +12,9 @@ from config import *
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--videos', default=True, action='store_true'  # Später ändern auf False und Kamera auf True
+parser.add_argument('-v', '--videos', default=True, action='store_true',  # Später ändern auf False und Kamera auf True
                     help="Analyses any .mp4 from detections/frames")
-parser.add_argument('-i', '--images', default=False, action='store_true'
+parser.add_argument('-i', '--images', default=False, action='store_true',
                     help="Analyses any .jpg from detections/frames")
 args = parser.parse_args()
 
