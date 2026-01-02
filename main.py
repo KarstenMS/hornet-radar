@@ -34,19 +34,21 @@ def image_recognition(frames_dir, model):
             continue
 
         # --- YOLO detection ---
-        predictions = run_detection(frame, model)
+        predictions, results = run_detection(frame, model)
         ah_count, eh_count = count_species(predictions)
 
         # --- Skip if no hornets detected ---
         if not (ah_count or eh_count):
             print(f"No hornets detected in {image_name}, skipping upload.")
             continue
+        
+        print(f'Positive hornet detections in {image_name}')
 
         image_name = f"{PI_ID}_Frame_{frame_id}.jpg"
         thumb_name = f"{PI_ID}_Frame_{frame_id}_thumb.jpg"
         local_image_path = os.path.join(LABELED_FRAMES_DIR, image_name)
         local_thumb_path = os.path.join(LABELED_FRAMES_THUMBS_DIR, thumb_name)
-        cv2.imwrite(local_image_path, frame)
+        cv2.imwrite(local_image_path, results)
         create_thumbnail(local_image_path, local_thumb_path)
 
         # Upload images
