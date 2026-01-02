@@ -24,9 +24,3 @@ def ensure_directories(*dirs):
     for d in dirs:
         os.makedirs(d, exist_ok=True)
 
-def save_and_upload_detection_frame(frame, predictions, frame_id):
-    # bbox zeichnen
-    # speichern
-    # thumbnail
-    # upload
-    frame, predictions, frame_id = 0

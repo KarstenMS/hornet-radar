@@ -17,3 +17,4 @@ model = torch.hub.load(YOLO_DIR, "custom", path=MODEL_PATH, source="local")
 results = model("https://ultralytics.com/images/zidane.jpg")
 
 print(results)
+
