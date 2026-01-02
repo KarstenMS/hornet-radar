@@ -2,6 +2,7 @@
 Configuration file for Hornet Radar.
 Contains constants used throughout the project.
 """
+import os
 
 # --- Raspberry Pi setup ---
 PI_ID = "PI_01"
