@@ -67,7 +67,7 @@ def upload_image_to_supabase(image_path, image_name):
     if response.status_code in [200, 201]:
         print("Image uploaded successfully!")
         # Return the public image URL
-        return f"{SUPABASE_URL}/storage/v1/object/public/{BUCKET_NAME}/{image_name}"
+        return f"{upload_url.replace('/object/', '/object/public/')}"
     else:
         print("Image upload failed:", response.status_code, response.text)
         return None
