@@ -60,14 +60,14 @@ def image_recognition(frames_dir, model, start_detection_id):
             label = "AH" if p["class_id"] == 1 else "EH"
             conf = f"{p['confidence']:.2f}"
 
-            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
             cv2.putText(
                 img,
                 f"{label} {conf}",
                 (x1, y1 - 5),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 255, 0),
+                1,
+                (0, 0, 255),
                 1
             )
 
@@ -157,14 +157,14 @@ def video_tracking(videos_dir, model, start_detection_id):
                 label = "AH" if p["class_id"] == 1 else "EH"
                 conf = f"{p['confidence']:.2f}"
 
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
                 cv2.putText(
                     frame,
                     f"{label} {conf}",
                     (x1, y1 - 5),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 255, 0),
+                    0,
+                    (0, 0, 255),
                     1
                 )
 
