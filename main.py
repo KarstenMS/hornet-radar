@@ -104,10 +104,7 @@ def image_recognition(frames_dir, model, start_detection_id):
             "thumb_url": thumb_url
         }
 
-        if upload_json_to_supabase(data):
-            print(f"Detection {detection_id} uploaded.")
-        else:
-            print(f"Upload failed for detection {detection_id}.")           
+        upload_json_to_supabase(data)
 
 
 def video_tracking(videos_dir, model, start_detection_id):
