@@ -117,7 +117,7 @@ for image_name in os.listdir(FRAMES_DIR):
     thumbnail = cv2.resize(img, THUMB_SIZE)
 
     local_image_path = os.path.join(LABLED_FRAMES_DIR, image_name)
-    local_thumb_path = os.path.join(LABLED_FRAMES_DIR, "thumbnails/{thumb_name}")
+    local_thumb_path = os.path.join(LABLED_FRAMES_DIR, "thumbnails", thumb_name)
     
     cv2.imwrite(local_image_path, img)
     cv2.imwrite(local_thumb_path, thumbnail)
