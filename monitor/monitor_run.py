@@ -22,11 +22,12 @@ LONGITUDE = 11.459636367430676
 ROOT = "/home/hornet1/hornet-radar"
 
 
-# Connection configuration
+# Supabase Connection
 
-SUPABASE_URL = "https://lebtnjdpjntaqheahjoi.supabase.co/rest/v1/sightings"
+SUPABASE_URL = "https://lebtnjdpjntaqheahjoi.supabase.co"
 SUPABASE_KEY = "sb_publishable_yRnBJ6G8mN-44O_8iNKltw_J2_-899y"
-
+BUCKET_NAME = "hornet-detections"
+TABLE_NAME = "sightings"
 
 # Initialising
 MODEL_PATH = os.path.join(ROOT, "model/yolov5s-all-data.pt")
@@ -41,7 +42,7 @@ model.conf = 0.8 # Optional: confidence threshold for detections
 def upload_image_to_supabase(image_path, image_name):
     
     # Prepare upload URL
-    upload_url = f"{SUPABASE_URL.replace('/rest/v1', '')}/storage/v1/object/hornet-detections/{image_name}"
+    upload_url = f"{SUPABASE_URL}/storage/v1/object/{BUCKET_NAME}/{image_name}"
 
     with open(image_path, "rb") as f:
         image_data = f.read()
@@ -57,7 +58,7 @@ def upload_image_to_supabase(image_path, image_name):
     if response.status_code in [200, 201]:
         print("Image uploaded successfully!")
         # Return the public image URL
-        return f"{SUPABASE_URL.replace('/rest/v1', '')}/storage/v1/object/public/hornet-images/{image_name}"
+        return f"{SUPABASE_URL}/storage/v1/object/public/{BUCKET_NAME}/{image_name}"
     else:
         print("Image upload failed:", response.status_code, response.text)
         return None
@@ -104,20 +105,7 @@ for image_name in os.listdir(FRAMES_DIR):
         "longitude": LONGITUDE
     }
 
-    # 5️ Send JSON to Supabase
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json"
-    }
-    response = requests.post(SUPABASE_URL, headers=headers, json=data)
-
-    if response.status_code == 201:
-        print("Successfully uploaded detection!")
-    else:
-        print("Upload failed:", response.status_code, response.text)
-
-    # 6 Save a local copy of the result image
+    # 5 Save a local copy of the result image
     image_name = f"{PI_ID}_Frame_{frame_id}.jpg"
     local_image_path = os.path.join(LABLED_FRAMES_DIR, image_name)
     cv2.imwrite(local_image_path, img)
@@ -126,4 +114,24 @@ for image_name in os.listdir(FRAMES_DIR):
     image_url = upload_image_to_supabase(local_image_path, image_name)
 
     # Add it to your JSON data
-    data["image_url"] = image_url
+    if image_url:
+        data["image_url"] = image_url
+
+
+    # 6 Send JSON to Supabase
+
+    json_url = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"
+
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json"
+    }
+    response = requests.post(json_url, headers=headers, json=data)
+
+    if response.status_code == 201:
+        print("Successfully uploaded detection!")
+    else:
+        print("Upload failed:", response.status_code, response.text)
+
+    
