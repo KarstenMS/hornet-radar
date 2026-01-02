@@ -23,7 +23,7 @@ def image_recognition(frames_dir, model, start_detection_id):
     detection_id = start_detection_id
 
     for image_name in os.listdir(frames_dir):
-        if not image_name.endswith(".jpg"):
+        if not image_name.lower().endswith(".jpg"):
             continue
 
 
@@ -110,86 +110,108 @@ def image_recognition(frames_dir, model, start_detection_id):
             print(f"Upload failed for detection {detection_id}.")           
 
 
-def video_tracking(videos_dir, model):
+def video_tracking(videos_dir, model, start_detection_id):
+    detection_id = start_detection_id
+
     for video_name in os.listdir(videos_dir):
-        frame_id = 0
+
         image_name = ""
-        if not video_name.endswith(".mp4"):
+        if not video_name.lower().endswith(".mp4"):
             continue
 
-        tracker = None
-        trajectory = []
-        tracking_active = False
-        frame_id = 0
         video_path = os.path.join(videos_dir, video_name)
+        print(f"Processing video {video_name} ...")
 
         cap = cv2.VideoCapture(video_path)
-        ret, frame = cap.read()
-        if not ret:
-            print(f"Could not read {video_name}.") 
+        if not cap.isOpened():
+            print(f"Could not open {video_name}.")
             continue
 
-        predictions = run_detection(frame, model)
-        ah_count, eh_count = count_species(predictions)
-
-        if not (ah_count or eh_count):
-            print(f"No hornets detected in {video_name}, skipping upload.") 
-            continue
-
-        # Create images and Thumbnails of first detection for upload
-        if not image_name:
-
-
-            cv2.imwrite(local_image_path, frame)
-            create_thumbnail(local_image_path, local_thumb_path)
-            
-
-        # extract Bounding Box from predictions
-        x1, y1, x2, y2 = predictions[0]["bbox"]
-        bbox = (x1, y1, x2-x1, y2-y1)
-
-        tracker = cv2.TrackerCSRT_create()
-        tracker.init(frame, bbox)
-        tracking_active = True
-
+        found = False
+        
         while True:
             ret, frame = cap.read()
             if not ret:
-                break
+                print(f"Could not read {video_name}.") 
+                continue
 
-            frame_id += 1
+            predictions = run_detection(frame, model)
+            if not predictions:
+                continue           
 
-            success, bbox = tracker.update(frame)
+            hornets = [p for p in predictions if p["class_id"] in (0, 1)]
+            if not hornets:
+                continue      
 
-            if success:
-                x, y, w, h = map(int, bbox)
-                cx = x + w // 2
-                cy = y + h // 2
-                trajectory.append((frame_id, cx, cy))
+            detection_id += 1
+            found = True
+
+            image_name = f"{PI_ID}_DET_{detection_id}.jpg"
+            thumb_name = f"{PI_ID}_DET_{detection_id}_thumb.jpg"
+            labeled_image_path = os.path.join(LABELED_FRAMES_DIR, image_name)
+            labeled_thumb_path = os.path.join(LABELED_FRAMES_THUMBS_DIR, thumb_name)   
+
+            # Bounding Boxes
+            for p in hornets:
+                x1, y1, x2, y2 = p["bbox"]
+                label = "AH" if p["class_id"] == 1 else "EH"
+                conf = f"{p['confidence']:.2f}"
+
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(
+                    frame,
+                    f"{label} {conf}",
+                    (x1, y1 - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0),
+                    1
+                )
+
+            cv2.imwrite(labeled_image_path, frame)
+            create_thumbnail(labeled_image_path, labeled_thumb_path)
+
+            image_url = upload_image_to_supabase(labeled_image_path, image_name)
+            thumb_url = upload_image_to_supabase(labeled_thumb_path, thumb_name, is_thumb=True)
+
+            data = {
+                "pi_id": PI_ID,
+                "detection_id": detection_id,
+                "timestamp": timestamp(),
+
+                "species": [
+                    "asian_hornet" if p["class_id"] == 1 else "european_hornet"
+                    for p in hornets
+                ],
+                "detections": [
+                    {
+                        "species": "asian_hornet" if p["class_id"] == 1 else "european_hornet",
+                        "confidence": p["confidence"],
+                        "bbox": p["bbox"]
+                    }
+                    for p in hornets
+                ],
+                "approach_angle": None,
+                "departure_angle": None,
+                "latitude": LATITUDE,
+                "longitude": LONGITUDE,
+                "image_url": image_url,
+                "thumb_url": thumb_url
+            }
+
+            if upload_json_to_supabase(data):
+                print(f"Detection {detection_id} uploaded.")
             else:
-                break  # Hornet lost
+                print(f"Upload failed for detection {detection_id}.")  
+
+            break  # stop after first detection
+
+        cap.release()
+
+        if not found:
+            print(f"No hornets detected in {video_name}.")
 
        
-        # Upload images
-        image_url = upload_image_to_supabase(local_image_path, image_name)
-        thumb_url = upload_image_to_supabase(local_thumb_path, thumb_name, is_thumb=True)       
-
-        data = {
-            "pi_id": PI_ID,
-            "frame_id": f"{PI_ID}_Frame_{frame_id}",
-            "timestamp": timestamp(),
-            "species": "asian_hornet" if ah_count > 0 else "european_hornet",
-            "approach_angle": trajectory[0],
-            "departure_angle": trajectory[-1],
-            "latitude": LATITUDE,
-            "longitude": LONGITUDE,
-            "image_url": image_url,
-            "thumb_url": thumb_url
-        }
-
-        upload_json_to_supabase(data)
-
-
 def main():
     ensure_directories(FRAMES_DIR, LABELED_FRAMES_DIR, LABELED_FRAMES_THUMBS_DIR, VIDEOS_DIR, LABELED_VIDEOS_DIR, LABELED_VIDEOS_THUMBS_DIR)
     model = load_model()
