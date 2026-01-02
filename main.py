@@ -12,9 +12,9 @@ from config import *
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--videos', type=bool, default=True,  # Später ändern auf False und Kamera auf True
+parser.add_argument('-v', '--videos', default=True, action='store_true'  # Später ändern auf False und Kamera auf True
                     help="Analyses any .mp4 from detections/frames")
-parser.add_argument('-i', '--images', type=bool, default=False,
+parser.add_argument('-i', '--images', default=False, action='store_true'
                     help="Analyses any .jpg from detections/frames")
 args = parser.parse_args()
 
@@ -158,7 +158,7 @@ def main():
     model = load_model()
     
 
-    if args.picture:
+    if args.images:
         image_recognition(FRAMES_DIR, model)
     elif args.video:
         video_tracking(VIDEOS_DIR, model)
