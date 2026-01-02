@@ -6,7 +6,7 @@ import argparse
 import os
 import cv2
 from detection import load_model, run_detection, count_species
-from storage import upload_image_to_supabase, upload_json_to_supabase
+from storage import upload_image_to_supabase, upload_json_to_supabase, get_last_detection_id
 from helpers import create_thumbnail, timestamp, ensure_directories
 from config import *
 
@@ -19,47 +19,79 @@ parser.add_argument('-i', '--images', default=False, action='store_true',
 args = parser.parse_args()
 
 
-def image_recognition(frames_dir, model):
-    frame_id = 0
+def image_recognition(frames_dir, model, start_detection_id):
+    detection_id = start_detection_id
+
     for image_name in os.listdir(frames_dir):
         if not image_name.endswith(".jpg"):
             continue
 
-        frame_id += 1
+
         image_path = os.path.join(frames_dir, image_name)
         print(f"Processing {image_name} ...")
 
-        frame = cv2.imread(image_path)
-        if frame is None:
+        img = cv2.imread(image_path)
+        if img is None:
             continue
 
         # --- YOLO detection ---
         predictions, render_img = run_detection(frame, model)
-        ah_count, eh_count = count_species(predictions)
+        if not predictions:
+            continue
+        hornets = [p for p in predictions if p["class_id"] in (0, 1)]
 
         # --- Skip if no hornets detected ---
-        if not (ah_count or eh_count):
+        if not (hornets):
             print(f"No hornets detected in {image_name}, skipping upload.")
             continue
         
         print(f'Positive hornet detections in {image_name}')
+        detection_id += 1
 
-        image_name = f"{PI_ID}_Frame_{frame_id}.jpg"
-        thumb_name = f"{PI_ID}_Frame_{frame_id}_thumb.jpg"
-        local_image_path = os.path.join(LABELED_FRAMES_DIR, image_name)
-        local_thumb_path = os.path.join(LABELED_FRAMES_THUMBS_DIR, thumb_name)
-        cv2.imwrite(local_image_path, render_img)
-        create_thumbnail(local_image_path, local_thumb_path)
+        # --- Filenames ---
+        image_name = f"{PI_ID}_DET_{detection_id}.jpg"
+        thumb_name = f"{PI_ID}_DET_{detection_id}_thumb.jpg"
+        labeled_image_path = os.path.join(LABELED_FRAMES_DIR, image_name)
+        labeled_thumb_path = os.path.join(LABELED_FRAMES_THUMBS_DIR, thumb_name)      
 
-        # Upload images
-        image_url = upload_image_to_supabase(local_image_path, image_name)
-        thumb_url = upload_image_to_supabase(local_thumb_path, thumb_name, is_thumb=True)
+        # --- Bounding Boxes zeichnen ---
+        for p in hornets:
+            x1, y1, x2, y2 = p["bbox"]
+            label = "AH" if p["class_id"] == 1 else "EH"
+            conf = f"{p['confidence']:.2f}"
 
+            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(
+                img,
+                f"{label} {conf}",
+                (x1, y1 - 5),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                1
+            )
+
+        # --- Upload images ---
+        image_url = upload_image_to_supabase(labeled_image_path, image_name)
+        thumb_url = upload_image_to_supabase(labeled_thumb_path, thumb_name, is_thumb=True)
+
+        # --- JSON ---
         data = {
             "pi_id": PI_ID,
-            "frame_id": f"{PI_ID}_Frame_{frame_id}",
+            "detection_id": detection_id,
             "timestamp": timestamp(),
-            "species": "asian_hornet" if ah_count > 0 else "european_hornet",
+            "species": [
+                "asian_hornet" if p["class_id"] == 1 else "european_hornet" 
+                for p in hornets
+            ],
+            "detections": [
+                {
+                    "species": "asian_hornet" if p["class_id"] == 1 else "european_hornet",
+                    "confidence": p["confidence"],
+                    "bbox": p["bbox"]
+                }
+                for p in hornets
+            ],
             "approach_angle": None,
             "departure_angle": None,
             "latitude": LATITUDE,
@@ -69,9 +101,9 @@ def image_recognition(frames_dir, model):
         }
 
         if upload_json_to_supabase(data):
-            print("Detection record uploaded.")
+            print(f"Detection {detection_id} uploaded.")
         else:
-            print("JSON upload failed.")            
+            print(f"Upload failed for detection {detection_id}.")           
 
 
 def video_tracking(videos_dir, model):
@@ -102,10 +134,8 @@ def video_tracking(videos_dir, model):
 
         # Create images and Thumbnails of first detection for upload
         if not image_name:
-            image_name = f"{PI_ID}_Frame_{frame_id}.jpg"
-            thumb_name = f"{PI_ID}_Frame_{frame_id}_thumb.jpg"
-            local_image_path = os.path.join(LABELED_FRAMES_DIR, image_name)
-            local_thumb_path = os.path.join(LABELED_FRAMES_THUMBS_DIR, thumb_name)
+
+
             cv2.imwrite(local_image_path, frame)
             create_thumbnail(local_image_path, local_thumb_path)
             
@@ -160,13 +190,15 @@ def main():
     ensure_directories(FRAMES_DIR, LABELED_FRAMES_DIR, LABELED_FRAMES_THUMBS_DIR, VIDEOS_DIR, LABELED_VIDEOS_DIR, LABELED_VIDEOS_THUMBS_DIR)
     model = load_model()
     
+    start_id = get_last_detection_id(PI_ID) #Continue with latest detection_id from Supabase
+    print(f"Starting detection_id at {start_detection_id}")
 
     if args.images:
         print(f"Reading {FRAMES_DIR} directory.") 
-        image_recognition(FRAMES_DIR, model)
+        image_recognition(FRAMES_DIR, model, start_detection_id)
     elif args.videos:
         print(f"Reading {VIDEOS_DIR} directory.") 
-        video_tracking(VIDEOS_DIR, model)
+        video_tracking(VIDEOS_DIR, model, start_detection_id)
 
         
 

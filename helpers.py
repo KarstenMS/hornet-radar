@@ -23,3 +23,9 @@ def ensure_directories(*dirs):
     """Create directories if they don't exist."""
     for d in dirs:
         os.makedirs(d, exist_ok=True)
+
+def save_and_upload_detection_frame(frame, predictions, frame_id):
+    # bbox zeichnen
+    # speichern
+    # thumbnail
+    # upload
