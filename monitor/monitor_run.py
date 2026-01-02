@@ -2,10 +2,10 @@
 import torch
 from ultralytics import YOLO
 import os
-import sys
+#import sys
 import datetime
 import requests
-import json
+#import json
 import cv2
 import warnings
 
@@ -43,7 +43,10 @@ model.conf = 0.8 # Optional: confidence threshold for detections
 def upload_image_to_supabase(image_path, image_name):
     
     # Prepare upload URL
-    upload_url = f"{SUPABASE_URL}/storage/v1/object/{BUCKET_NAME}/{image_name}"
+    if "thumb.jpg" in image_name:
+        upload_url = f"{SUPABASE_URL}/storage/v1/object/{BUCKET_NAME}/thumbnails/{image_name}"
+    else:
+        upload_url = f"{SUPABASE_URL}/storage/v1/object/{BUCKET_NAME}/{image_name}"
 
     with open(image_path, "rb") as f:
         image_data = f.read()
@@ -63,6 +66,7 @@ def upload_image_to_supabase(image_path, image_name):
     else:
         print("Image upload failed:", response.status_code, response.text)
         return None
+
 
 
 # === LOOP THROUGH IMAGES ===
@@ -113,7 +117,7 @@ for image_name in os.listdir(FRAMES_DIR):
     thumbnail = cv2.resize(img, THUMB_SIZE)
 
     local_image_path = os.path.join(LABLED_FRAMES_DIR, image_name)
-    local_thumb_path = os.path.join(LABLED_FRAMES_DIR, thumb_name)
+    local_thumb_path = os.path.join(LABLED_FRAMES_DIR, "thumbnails/{thumb_name}")
     
     cv2.imwrite(local_image_path, img)
     cv2.imwrite(local_thumb_path, thumbnail)
