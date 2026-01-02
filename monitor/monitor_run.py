@@ -28,13 +28,18 @@ SUPABASE_URL = "https://lebtnjdpjntaqheahjoi.supabase.co"
 SUPABASE_KEY = "sb_publishable_yRnBJ6G8mN-44O_8iNKltw_J2_-899y"
 BUCKET_NAME = "hornet-detections"
 TABLE_NAME = "sightings"
-THUMB_SIZE = 192, 108
+THUMB_SIZE = 192, 108   #Pixel-Size for thumbnails
 
 # Initialising
 MODEL_PATH = os.path.join(ROOT, "model/yolov5s-all-data.pt")
 YOLO_DIR = os.path.join(ROOT, "yolov5")
 FRAMES_DIR = os.path.join(ROOT, "detections/frames")     # For testing
-LABLED_FRAMES_DIR = os.path.join(ROOT, "detections/labled-frames")     
+LABLED_FRAMES_DIR = os.path.join(ROOT, "detections/labled-frames")    
+LABLED_THUMBS_DIR = os.path.join(ROOT, "detections/labled-frames/thumbnails")  
+
+os.makedirs(FRAMES_DIR, exist_ok=True)
+os.makedirs(LABLED_FRAMES_DIR, exist_ok=True)
+os.makedirs(LABLED_THUMBS_DIR, exist_ok=True)
 
 model = torch.hub.load(YOLO_DIR, "custom", path=MODEL_PATH, source="local")
 model.conf = 0.8 # Optional: confidence threshold for detections
@@ -117,7 +122,7 @@ for image_name in os.listdir(FRAMES_DIR):
     thumbnail = cv2.resize(img, THUMB_SIZE)
 
     local_image_path = os.path.join(LABLED_FRAMES_DIR, image_name)
-    local_thumb_path = os.path.join(LABLED_FRAMES_DIR, "thumbnails", thumb_name)
+    local_thumb_path = os.path.join(LABLED_THUMBS_DIR, thumb_name)
     
     cv2.imwrite(local_image_path, img)
     cv2.imwrite(local_thumb_path, thumbnail)
