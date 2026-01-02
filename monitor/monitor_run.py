@@ -28,6 +28,7 @@ SUPABASE_URL = "https://lebtnjdpjntaqheahjoi.supabase.co"
 SUPABASE_KEY = "sb_publishable_yRnBJ6G8mN-44O_8iNKltw_J2_-899y"
 BUCKET_NAME = "hornet-detections"
 TABLE_NAME = "sightings"
+THUMB_SIZE = 192, 108
 
 # Initialising
 MODEL_PATH = os.path.join(ROOT, "model/yolov5s-all-data.pt")
@@ -107,15 +108,25 @@ for image_name in os.listdir(FRAMES_DIR):
 
     # 5 Save a local copy of the result image
     image_name = f"{PI_ID}_Frame_{frame_id}.jpg"
+    thumb_name = f"{PI_ID}_Frame_{frame_id}_thumb.jpg"
+
+    thumbnail = cv2.resize(img, THUMB_SIZE)
+
     local_image_path = os.path.join(LABLED_FRAMES_DIR, image_name)
+    local_thumb_path = os.path.join(LABLED_FRAMES_DIR, thumb_name)
+    
     cv2.imwrite(local_image_path, img)
+    cv2.imwrite(local_thumb_path, thumbnail)
 
     # Upload and get public URL
     image_url = upload_image_to_supabase(local_image_path, image_name)
+    thumb_url = upload_image_to_supabase(local_image_path, image_name)
 
     # Add it to your JSON data
     if image_url:
         data["image_url"] = image_url
+    if image_url:
+        data["thumb_url"] = thumb_url    
 
 
     # 6 Send JSON to Supabase
