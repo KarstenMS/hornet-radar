@@ -20,8 +20,7 @@ def run_detection(image, model):
     """Run YOLO detection on a single image."""
     results = model(image)
     predictions = results.pred[0]
-    results.render()
-    return parse_predictions(predictions, results)
+    return parse_predictions(predictions)
 
 def count_species(predictions):
     ah_count = sum(1 for p in predictions if p["class_id"] == 1)
@@ -29,7 +28,7 @@ def count_species(predictions):
     return ah_count, eh_count
 
 
-def parse_predictions(predictions, results):
+def parse_predictions(predictions):
     parsed = []
     for p in predictions:
         x1, y1, x2, y2, conf, cls = p.tolist()
@@ -38,6 +37,6 @@ def parse_predictions(predictions, results):
             "confidence": conf,
             "class_id": int(cls)
         })
-    return parsed, results
+    return parsed
 
 

@@ -29,3 +29,4 @@ def save_and_upload_detection_frame(frame, predictions, frame_id):
     # speichern
     # thumbnail
     # upload
+    frame, predictions, frame_id = 0

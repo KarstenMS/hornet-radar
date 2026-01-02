@@ -35,7 +35,7 @@ def image_recognition(frames_dir, model, start_detection_id):
             continue
 
         # --- YOLO detection ---
-        predictions, render_img = run_detection(frame, model)
+        predictions = run_detection(img, model)
         if not predictions:
             continue
         hornets = [p for p in predictions if p["class_id"] in (0, 1)]
@@ -190,7 +190,7 @@ def main():
     ensure_directories(FRAMES_DIR, LABELED_FRAMES_DIR, LABELED_FRAMES_THUMBS_DIR, VIDEOS_DIR, LABELED_VIDEOS_DIR, LABELED_VIDEOS_THUMBS_DIR)
     model = load_model()
     
-    start_id = get_last_detection_id(PI_ID) #Continue with latest detection_id from Supabase
+    start_detection_id = get_last_detection_id(PI_ID) #Continue with latest detection_id from Supabase
     print(f"Starting detection_id at {start_detection_id}")
 
     if args.images:
