@@ -26,7 +26,7 @@ LABELED_VIDEOS_THUMBS_DIR = os.path.join(LABELED_VIDEOS_DIR, "thumbnails")
 
 # --- Supabase ---
 SUPABASE_URL = "https://lebtnjdpjntaqheahjoi.supabase.co"
-SUPABASE_KEY = "sb_publishable_yRnBJ6G8mN-44O_8iNKltw_J2_-899y"
+SUPABASE_KEY = "sb_secret_P7lY71HribtJdN1kIBw-Fw_6bCRZX50"
 BUCKET_NAME = "hornet-detections"
 TABLE_NAME = "sightings"
 
