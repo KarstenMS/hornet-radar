@@ -71,6 +71,10 @@ def image_recognition(frames_dir, model, start_detection_id):
                 1
             )
 
+        # --- Speichern & Thumbnail ---
+        cv2.imwrite(labeled_image_path, img)
+        create_thumbnail(labeled_image_path, labeled_thumb_path)
+
         # --- Upload images ---
         image_url = upload_image_to_supabase(labeled_image_path, image_name)
         thumb_url = upload_image_to_supabase(labeled_thumb_path, thumb_name, is_thumb=True)
