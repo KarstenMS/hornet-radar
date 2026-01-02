@@ -7,7 +7,7 @@ import os
 import cv2
 from detection import load_model, run_detection, count_species
 from storage import upload_image_to_supabase, upload_json_to_supabase
-from utils import create_thumbnail, timestamp, ensure_directories
+from helpers import create_thumbnail, timestamp, ensure_directories
 from config import *
 
 def main():
