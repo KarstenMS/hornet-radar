@@ -20,15 +20,15 @@ def save_and_upload_detection_frame(frame, hornets, detection_id):
     for p in hornets:
         x1, y1, x2, y2 = p["bbox"]
         label = "AH" if p["class_id"] == 1 else "EH"
-        conf = f"{p['confidence']:.2f}"
+        conf = f"{p['confidence'] * 100:.2f}%"
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
         cv2.putText(
             frame,
             f"{label} {conf}",
             (x1, y1 - 5),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
+            cv2.FONT_HERSHEY_DUPLEX,
+            1.0,
             (0, 0, 255),
             1
         )
