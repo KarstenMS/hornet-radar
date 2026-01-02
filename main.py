@@ -5,9 +5,9 @@ uploads results and thumbnails to Supabase.
 import argparse
 import os
 import cv2
-from detection import load_model, run_detection, count_species
-from storage import upload_image_to_supabase, upload_json_to_supabase, get_last_detection_id
-from helpers import create_thumbnail, timestamp, ensure_directories
+from detection import load_model, run_detection
+from storage import get_last_detection_id
+from helpers import ensure_directories
 from pipeline_utils import save_and_upload_detection_frame
 from config import *
 

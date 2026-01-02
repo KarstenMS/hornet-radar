@@ -1,8 +1,6 @@
 """
 Handles Supabase uploads for images and JSON.
 """
-
-import os
 import requests
 from config import SUPABASE_URL, SUPABASE_KEY, BUCKET_NAME, TABLE_NAME
 

@@ -4,7 +4,6 @@ Handles YOLO detection and tracking logic.
 
 import torch
 from ultralytics import YOLO
-import cv2
 import warnings
 from config import YOLO_DIR, MODEL_DIR, CONFIDENCE_THRESHOLD
 
