@@ -58,6 +58,7 @@ print("  r = Tracker zurücksetzen")
 while True:
     ret, frame = cap.read()
     if not ret:
+        print("Cannot read cap")
         break
 
     frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
