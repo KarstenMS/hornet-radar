@@ -30,7 +30,9 @@ print("Motion-Gate gestartet – ESC zum Beenden")
 # Main Loop
 # =====================
 while True:
-    frame = cam.picam2.capture_array()
+    frame = picam2.capture_array()
+    print(frame.mean())
+
 
     if frame is None:
         print("Kein Frame erhalten")
