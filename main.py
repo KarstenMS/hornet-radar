@@ -99,6 +99,29 @@ def video_tracking(videos_dir, model, start_detection_id):
             print(f"No hornets detected in {video_name}.")
 
        
+def camera_tracking(model, start_detection_id):
+
+    from camera import Camera
+
+    cam = Camera()
+
+    while True:
+        frame = cam.read()
+        if frame is None:
+            print("Cannot read camera")
+            break
+
+        # OpenCV processing
+        cv2.imshow("Debug", frame)
+
+        if cv2.waitKey(1) & 0xFF == 27:
+            break
+
+    cam.release()
+    cv2.destroyAllWindows()
+
+
+       
 def main():
     ensure_directories(FRAMES_DIR, LABELED_FRAMES_DIR, LABELED_FRAMES_THUMBS_DIR, VIDEOS_DIR, LABELED_VIDEOS_DIR, LABELED_VIDEOS_THUMBS_DIR)
     model = load_model()
@@ -112,6 +135,10 @@ def main():
     elif args.videos:
         print(f"Reading {VIDEOS_DIR} directory.") 
         video_tracking(VIDEOS_DIR, model, start_detection_id)
+    else:
+        print(f"Capturing from camera with {CAMERA_FPS} FPS") 
+        video_tracking(model, start_detection_id)
+
 
         
 
