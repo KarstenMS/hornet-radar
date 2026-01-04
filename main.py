@@ -137,7 +137,7 @@ def main():
         video_tracking(VIDEOS_DIR, model, start_detection_id)
     else:
         print(f"Capturing from camera with {CAMERA_FPS} FPS") 
-        video_tracking(model, start_detection_id)
+        camera_tracking(model, start_detection_id)
 
 
         
