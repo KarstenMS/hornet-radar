@@ -32,7 +32,7 @@ print("Motion-Gate gestartet – ESC zum Beenden")
 while True:
     frame = cam.picam2.capture_array()
     print(frame.mean())
-
+    display = frame.copy() # <-- DAS ist das, was wir anzeigen
 
     if frame is None:
         print("Kein Frame erhalten")
@@ -50,25 +50,19 @@ while True:
     # Motion Detection
     # =====================
     fg_mask = bg_subtractor.apply(frame)
-    fg_mask = cv2.medianBlur(fg_mask, 5)
 
     contours, _ = cv2.findContours(
-        fg_mask,
-        cv2.RETR_EXTERNAL,
-        cv2.CHAIN_APPROX_SIMPLE
+        fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
 
     motion_detected = False
     motion_boxes = []
 
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area < MIN_MOTION_AREA:
+    for c in contours:
+        if cv2.contourArea(c) < 500:
             continue
-
-        x, y, w, h = cv2.boundingRect(cnt)
-        motion_boxes.append((x, y, w, h))
-        motion_detected = True
+        x, y, w, h = cv2.boundingRect(c)
+        cv2.rectangle(display, (x,y), (x+w,y+h), (0,255,255), 2)
 
     # =====================
     # Draw Motion Boxes
@@ -113,8 +107,13 @@ while True:
                 0.6,
                 (255, 255, 255),
                 2)
+    
+    print(                                              #Debug
+    "frame:", frame.shape, frame.mean(),
+    "| display:", display.shape, display.mean()
+    )
 
-    cv2.imshow("Hornet Radar – Motion Gate", frame)
+    cv2.imshow("Hornet Debug", display)
 
     if cv2.waitKey(1) & 0xFF == 27:
         break
