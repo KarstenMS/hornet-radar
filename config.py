@@ -31,9 +31,15 @@ BUCKET_NAME = "hornet-detections"
 TABLE_NAME = "sightings"
 
 # --- Motion_Gate Tracking Settings ---
-TRACKER_TYPE = "KCF"        # Available: "KCF", "CSRT", "MOSSE", "AUTO"
+TRACKER_TYPE = "AUTO"       # Available: "KCF", "CSRT", "MOSSE", "AUTO"
 FRAME_SKIP = 3              # analyse only every 3rd frame (performance)
 TRACKER_TIMEOUT = 2.0       # Seconds without update → reset
+
+MOTION_HISTORY = 300
+MOTION_VAR_THRESHOLD = 25
+MOTION_MIN_AREA = 500
+
+MOTION_KERNEL_SIZE = 3
 
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"   # "picamera2" | "webcam"

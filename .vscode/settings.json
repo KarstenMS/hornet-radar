@@ -1,0 +1,9 @@
+{
+    "scm.alwaysShowActions": false,
+    "scm.alwaysShowRepositories": false,
+    "scm.autoReveal": true,
+    "scm.showActionButton": true,
+    "scm.showInputActionButton": true,
+    "scm.workingSets.enabled": false,
+    "terminal.integrated.tabs.defaultIcon": "folder"
+}

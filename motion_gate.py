@@ -48,7 +48,7 @@ def start_tracker(frame, bbox):
 
     tracker = create_tracker()
     tracker.init(frame, bbox)
-    
+
     tracking_active = True
     last_motion_time = time.time()
 
@@ -87,10 +87,16 @@ def draw_tracking(frame, bbox):
 cam = Camera()
 
 bg_subtractor = cv2.createBackgroundSubtractorMOG2(
-    history=500,
-    varThreshold=16,
-    detectShadows=True
+    history=MOTION_HISTORY,
+    varThreshold=MOTION_VAR_THRESHOLD,
+    detectShadows=False
 )
+
+kernel = cv2.getStructuringElement(
+    cv2.MORPH_ELLIPSE,
+    (MOTION_KERNEL_SIZE, MOTION_KERNEL_SIZE)
+)
+
 
 frame_count = 0
 last_time = time.time()
@@ -122,8 +128,9 @@ while True:
     motion_boxes = []
 
     for c in contours:
-        if cv2.contourArea(c) < 500:
+        if cv2.contourArea(c) < MOTION_MIN_AREA:
             continue
+
         x, y, w, h = cv2.boundingRect(c)
         motion_boxes.append((x, y, w, h))
         motion_detected = True
