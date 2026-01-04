@@ -30,14 +30,10 @@ SUPABASE_KEY = "sb_secret_P7lY71HribtJdN1kIBw-Fw_6bCRZX50"
 BUCKET_NAME = "hornet-detections"
 TABLE_NAME = "sightings"
 
-
-# --- Detection Settings ---
-CONFIDENCE_THRESHOLD = 0.8 # Optional: confidence threshold for detections
-
-# --- Motion_Gate Settings ---
-FRAME_SKIP = 3              # analyse only every 3rd frame
-MIN_MOTION_AREA = 800       # Pixel – Filter gegen Rauschen
-TRACKER_TIMEOUT = 2.0       # Sekunden ohne Update → reset
+# --- Motion_Gate Tracking Settings ---
+TRACKER_TYPE = "KCF"        # Available: "KCF", "CSRT", "MOSSE", "AUTO"
+FRAME_SKIP = 3              # analyse only every 3rd frame (performance)
+TRACKER_TIMEOUT = 2.0       # Seconds without update → reset
 
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"   # "picamera2" | "webcam"
@@ -52,3 +48,6 @@ WEBCAM_INDEX = 0
 
 # Picamera2 only
 PICAM_FORMAT = "RGB888"
+
+# --- Detection Settings ---
+CONFIDENCE_THRESHOLD = 0.8 # Optional: confidence threshold for detections

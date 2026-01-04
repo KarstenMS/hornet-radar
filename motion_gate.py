@@ -15,11 +15,40 @@ last_motion_time = 0
 # Functions
 # =====================
 
+def create_tracker():
+    t = TRACKER_TYPE.upper()
+
+    if t == "KCF" and hasattr(cv2, "TrackerKCF_create"):
+        print("Tracker: KCF")
+        return cv2.TrackerKCF_create()
+
+    if t == "CSRT" and hasattr(cv2, "TrackerCSRT_create"):
+        print("Tracker: CSRT")
+        return cv2.TrackerCSRT_create()
+
+    if t == "MOSSE" and hasattr(cv2, "TrackerMOSSE_create"):
+        print("Tracker: MOSSE")
+        return cv2.TrackerMOSSE_create()
+
+    if t == "AUTO":
+        if hasattr(cv2, "TrackerKCF_create"):
+            print("Tracker: AUTO → KCF")
+            return cv2.TrackerKCF_create()
+        if hasattr(cv2, "TrackerCSRT_create"):
+            print("Tracker: AUTO → CSRT")
+            return cv2.TrackerCSRT_create()
+
+    raise RuntimeError(
+        f"Tracker '{TRACKER_TYPE}' not available. "
+        "Install opencv-contrib-python."
+    )
+
 def start_tracker(frame, bbox):
     global tracker, tracking_active, last_motion_time
 
-    tracker = cv2.TrackerCSRT_create()
+    tracker = create_tracker()
     tracker.init(frame, bbox)
+    
     tracking_active = True
     last_motion_time = time.time()
 
