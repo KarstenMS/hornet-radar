@@ -42,9 +42,8 @@ TRACKER_TIMEOUT = 2.0       # Sekunden ohne Update → reset
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"   # "picamera2" | "webcam"
 
-# Common camera settings
-CAMERA_WIDTH = 640
-CAMERA_HEIGHT = 480
+CAMERA_WIDTH = 1920
+CAMERA_HEIGHT = 1080
 THUMB_SIZE = 192, 108   #Pixel-Size for thumbnails 
 CAMERA_FPS = 30
 
