@@ -13,7 +13,7 @@ from config import *
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--videos', default=False, action='store_true',  # Später ändern auf False und Kamera auf True
+parser.add_argument('-v', '--videos', default=False, action='store_true',
                     help="Analyses any .mp4 from detections/frames")
 parser.add_argument('-i', '--images', default=False, action='store_true',
                     help="Analyses any .jpg from detections/frames")
@@ -50,10 +50,8 @@ def image_recognition(frames_dir, model, start_detection_id):
         detection_id += 1
         save_and_upload_detection_frame(img, hornets, detection_id)
 
-
-
-
 def video_tracking(videos_dir, model, start_detection_id):
+
     detection_id = start_detection_id
 
     for video_name in os.listdir(videos_dir):
@@ -98,8 +96,10 @@ def video_tracking(videos_dir, model, start_detection_id):
         if not found:
             print(f"No hornets detected in {video_name}.")
 
-       
 def camera_tracking(model, start_detection_id):
+
+    model = model
+    start_detection_id = start_detection_id
 
     from camera import Camera
 
