@@ -34,6 +34,11 @@ TABLE_NAME = "sightings"
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.8 # Optional: confidence threshold for detections
 
+# --- Motion_Gate Settings ---
+FRAME_SKIP = 3              # analyse only every 3rd frame
+MIN_MOTION_AREA = 800       # Pixel – Filter gegen Rauschen
+TRACKER_TIMEOUT = 2.0       # Sekunden ohne Update → reset
+
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"   # "picamera2" | "webcam"
 
