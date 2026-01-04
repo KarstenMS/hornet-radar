@@ -38,6 +38,7 @@ while True:
 
     # Important: Picamera2 → OpenCV
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    print(frame.shape, frame.dtype)
 
     frame_count += 1
     if frame_count % FRAME_SKIP != 0:
