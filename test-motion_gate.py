@@ -31,9 +31,13 @@ print("Motion-Gate gestartet – ESC zum Beenden")
 # =====================
 while True:
     frame = cam.read()
+
     if frame is None:
         print("Kein Frame erhalten")
         break
+
+    # Important: Picamera2 → OpenCV
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
     frame_count += 1
     if frame_count % FRAME_SKIP != 0:
@@ -117,4 +121,4 @@ while True:
 # =====================
 cam.release()
 cv2.destroyAllWindows()
-print("🛑 Motion-Gate beendet")
+print("Motion-Gate beendet")
