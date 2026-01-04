@@ -30,7 +30,7 @@ print("Motion-Gate gestartet – ESC zum Beenden")
 # Main Loop
 # =====================
 while True:
-    frame = picam2.capture_array()
+    frame = cam.picam2.capture_array()
     print(frame.mean())
 
 
