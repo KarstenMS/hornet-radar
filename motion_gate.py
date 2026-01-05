@@ -174,7 +174,12 @@ while True:
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     display = frame.copy()
 
-    # Update FPS
+    # === Status defaults ===
+    motion_detected = False
+    motion_boxes = []
+    bbox = None
+
+    # === Update FPS ===
     now = time.time()
     dt = now - last_time
     if dt > 0:
@@ -183,13 +188,11 @@ while True:
 
     frame_count += 1
     process_this_frame = (frame_count % FRAME_SKIP == 0)
+
     if process_this_frame:
     
         fg_mask = bg_subtractor.apply(frame)
         contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        motion_detected = False
-        motion_boxes = []
 
         for c in contours:
             if cv2.contourArea(c) < MOTION_MIN_AREA:
@@ -209,10 +212,10 @@ while True:
         if bbox is not None:
             tracking_frames += 1
 
-            # Visualize Tracking
+            # === Visualize Tracking ===
             draw_tracking(display, bbox)
 
-            # === STABIL ===
+            # === Tracking stable and no detection yet ===
             if tracking_frames >= TRACKING_STABLE_FRAMES and not detection_done:
                 print("Stable tracking - running YOLO on ROI")
 
@@ -226,7 +229,7 @@ while True:
 
                 detection_done = True
         else:
-            # Lost Trackking - reset
+            # === Trackking lost - reset ===
             reset_tracking()
 
 
