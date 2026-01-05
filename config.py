@@ -40,7 +40,7 @@ TRACKING_STABLE_FRAMES = 5      # Number of frames to be stable before running d
 
 MOTION_HISTORY = 300            # Amount of frames used for Backgroundmodel ( low = faster but vulnerable to noise, high = slower, but stable background)
 MOTION_VAR_THRESHOLD = 25       # Sensibility of motion detection
-MOTION_MIN_AREA = 300           # Min pixel ara for being relevant
+MOTION_MIN_AREA = 500           # Min pixel ara for being relevant
 
 MOTION_KERNEL_SIZE = 3          # Size of morphological filtering 
 MOTION_TRACK_LOST_TIMEOUT = 3.0 # Seconds, after which tracking stopps, if no motion. 

@@ -190,9 +190,12 @@ while True:
     # ========================================================
     # Timeout
     # ========================================================
+
     if tracking_state.active and tracking_state.is_timed_out(TRACKER_TIMEOUT):
         print("Tracking timeout → reset")
         tracking_state.reset()
+
+    print(tracking_state)
 
     # ========================================================
     # Debug Overlay
