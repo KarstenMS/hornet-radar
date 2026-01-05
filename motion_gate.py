@@ -5,15 +5,6 @@ from config import *
 from detection import load_model, run_detection
 
 # =====================
-# Settings
-# =====================
-
-tracker = None
-tracking_active = False
-last_motion_time = 0
-
-
-# =====================
 # Functions
 # =====================
 
@@ -45,51 +36,24 @@ def create_tracker():
         "Install opencv-contrib-python."
     )
 
-def start_tracker(frame, bbox):
-    global tracker, tracking_active, last_motion_time
-    global tracking_frames, detection_done
-
+def start_tracker(frame, bbox, state: TrackingState):
     tracker = create_tracker()
     tracker.init(frame, bbox)
+    state.start(tracker)
 
-    last_motion_time = time.time()
-
-    tracking_frames = 0
-    detection_done = False
-    tracking_active = True
-
-def update_tracker(frame):
-    global tracking_active, last_motion_time
-    
-    if not tracking_active or tracker is None:
+def update_tracker(frame, state: TrackingState):
+    if not state.active or state.tracker is None:
         return None
 
-    success, bbox = tracker.update(frame)
-
-    if success:
-        last_motion_time = time.time()
+    ok, bbox = state.tracker.update(frame)
+    if ok:
+        state.last_update = time.time()
+        state.tracking_frames += 1
         return bbox
-    else:
-        reset_tracking()
-        return None
+
+    return None
+
     
-def reset_tracking():
-    global tracker, tracking_active, tracking_frames, detection_done, bbox
-
-    tracker = None
-    tracking_active = False
-    tracking_frames = 0
-    detection_done = False
-    bbox = None
-
-    print("Tracking reset")
-
-def check_tracker_timeout():
-    global tracking_active
-
-    if tracking_active and time.time() - last_motion_time > TRACKER_TIMEOUT:
-        reset_tracking()
-
 def draw_tracking(frame, bbox):
     x, y, w, h = map(int, bbox)
     cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 255), 2)
@@ -154,19 +118,15 @@ kernel = cv2.getStructuringElement(
 )
 
 
+yolo_model = load_model()
+
+# === Tracking State ===
+from tracking_state import TrackingState
+tracking_state = TrackingState()
+
 frame_count = 0
 last_time = time.time()
 fps = 0.0
-
-yolo_model = load_model()
-
-# === Status defaults ===
-last_motion_detected_time = 0
-tracking_frames = 0
-detection_done = False
-tracking_active = False
-
-bbox = None
 
 print("Motion-Gate gestartet – ESC zum Beenden")
 
@@ -201,39 +161,42 @@ while True:
         fg_mask = bg_subtractor.apply(frame)
         contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+        motion_boxes = []
+        motion_detected = False
+
         for c in contours:
 
             # == Detecting Motions ===
             if cv2.contourArea(c) < MOTION_MIN_AREA:
                 continue
-
-            x, y, w, h = cv2.boundingRect(c)
+          
             motion_boxes.append((x, y, w, h))
             motion_detected = True
-            last_motion_detected_time = time.time()
-            cv2.rectangle(display, (x,y), (x+w,y+h), (0,255,255), 2)
-
-        if motion_detected and not tracking_active:
-            x, y, w, h = max(motion_boxes, key=lambda b: b[2]*b[3])
-            start_tracker(frame, (x, y, w, h))
-
-        bbox = update_tracker(frame)
-
-        # === Abort tracking if no motion for too long ===
-        if tracking_active:
-            if time.time() - last_motion_detected_time > MOTION_TRACK_LOST_TIMEOUT:
-                print("No motion → stopping tracking")
-                reset_tracking()
+ 
+        if motion_detected and not state.active:
+            bbox = largest_motion_box
+            tracker = create_tracker()
+            tracker.init(frame, bbox)
+            state.start(tracker, bbox)
 
 
+        # === Tracking Update ===
+
+        if state.active:
+            ok, bbox = state.tracker.update(frame)
+            if ok:
+                state.update(bbox)
+            else:
+                state.reset()
+
+        
         if bbox is not None:
-            tracking_frames += 1
 
             # === Visualize Tracking ===
             draw_tracking(display, bbox)
 
             # === Tracking stable and no detection yet ===
-            if tracking_frames >= TRACKING_STABLE_FRAMES and not detection_done:
+            if tracking_state.is_stable(TRACKING_STABLE_FRAMES) and not tracking_state.detection_done:
                 print("Stable tracking - running YOLO on ROI")
 
                 detections = run_yolo_on_roi(frame, bbox)
@@ -244,12 +207,13 @@ while True:
                     # HIER später Übergabe an main.py (Save + Upload)
                     print(detections)
 
-                detection_done = True
-        else:
-            # === Trackking lost - reset ===
-            reset_tracking()
+                tracking_state.detection_done = True
 
-        check_tracker_timeout()
+        # === Tracking Timeout ===
+        if tracking_state.active:
+            if time.time() - tracking_state.last_update > TRACKER_TIMEOUT:
+                print("Tracking timeout → reset")
+                tracking_state.reset()
    
 
     # =====================
@@ -277,32 +241,23 @@ while True:
                     (0,0,255) if motion_detected else (0,255,0),
                     2)
 
-        y += line
         cv2.putText(display,
-                    f"Tracking: {'YES' if tracking_active else 'NO'}",
-                    (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0,255,255) if tracking_active else (150,150,150),
-                    2)
+            f"Tracking: {'YES' if tracking_state.active else 'NO'}",
+            (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+            (0,255,255) if tracking_state.active else (150,150,150), 2)
 
         y += line
         cv2.putText(display,
-                    f"Tracking frames: {tracking_frames}",
-                    (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (255,255,255),
-                    2)
+            f"Tracking frames: {tracking_state.frames_tracked}",
+            (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+            (255,255,255), 2)
 
         y += line
         cv2.putText(display,
-                    f"YOLO done: {'YES' if detection_done else 'NO'}",
-                    (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0,255,0) if detection_done else (0,0,255),
-                    2)
+            f"YOLO done: {'YES' if tracking_state.detection_done else 'NO'}",
+            (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+            (0,255,0) if tracking_state.detection_done else (0,0,255), 2)
+
 
         y += line
         cv2.putText(display,
