@@ -314,13 +314,14 @@ while True:
                     2)
 
         #temp print
-        print(          
-            "tracking_active:", tracking_active,
-            "| tracking_frames:", tracking_frames,
-            "| detection_done:", detection_done,
-            "| last_motion_time:", last_motion_time,
+        if process_this_frame:
+            print(          
+                "tracking_active:", tracking_active,
+                "| tracking_frames:", tracking_frames,
+                "| detection_done:", detection_done,
+                "| last_motion_time:", last_motion_time,
 
-        )
+            )
 
 
         cv2.imshow("Hornet Debug", display)
