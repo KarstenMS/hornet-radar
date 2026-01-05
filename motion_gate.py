@@ -160,6 +160,14 @@ fps = 0.0
 
 yolo_model = load_model()
 
+# === Status defaults ===
+motion_detected = False
+tracking_frames = 0
+detection_done = False
+tracking_active = False
+motion_boxes = []
+bbox = None
+
 print("Motion-Gate gestartet – ESC zum Beenden")
 
 # =====================
@@ -173,14 +181,6 @@ while True:
 
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     display = frame.copy()
-
-    # === Status defaults ===
-    motion_detected = False
-    tracking_frames = 0
-    detection_done = False
-    tracking_active = False
-    motion_boxes = []
-    bbox = None
 
     # === Update FPS ===
     now = time.time()
