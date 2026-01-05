@@ -2,6 +2,7 @@ import cv2
 import time
 from camera import Camera
 from config import *
+from detection import load_model, run_detection
 
 # =====================
 # Settings
@@ -10,6 +11,7 @@ from config import *
 tracker = None
 tracking_active = False
 last_motion_time = 0
+
 
 # =====================
 # Functions
@@ -45,16 +47,20 @@ def create_tracker():
 
 def start_tracker(frame, bbox):
     global tracker, tracking_active, last_motion_time
+    global tracking_frames, detection_done
 
     tracker = create_tracker()
     tracker.init(frame, bbox)
 
     tracking_active = True
     last_motion_time = time.time()
+    
+    tracking_frames = 0
+    detection_done = False
 
 def update_tracker(frame):
     global tracking_active, last_motion_time
-
+    
     if not tracking_active or tracker is None:
         return None
 
@@ -81,6 +87,45 @@ def draw_tracking(frame, bbox):
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6, (0, 255, 255), 2)
 
+def extract_roi(frame, bbox):
+    x, y, w, h = map(int, bbox)
+
+    h_frame, w_frame = frame.shape[:2]
+
+    x = max(0, x)
+    y = max(0, y)
+    w = min(w, w_frame - x)
+    h = min(h, h_frame - y)
+
+    roi = frame[y:y+h, x:x+w]
+    return roi, (x, y)
+
+def run_yolo_on_roi(frame, bbox):
+    roi, offset = extract_roi(frame, bbox)
+
+    if roi.size == 0:
+        return []
+
+    predictions = run_detection(roi, yolo_model)
+
+    detections = []
+    for p in predictions:
+        x1, y1, x2, y2 = p["bbox"]
+
+        # ROI → Full frame Koordinaten
+        detections.append({
+            "class_id": p["class_id"],
+            "confidence": p["confidence"],
+            "bbox": [
+                x1 + offset[0],
+                y1 + offset[1],
+                x2 + offset[0],
+                y2 + offset[1],
+            ]
+        })
+
+    return detections
+
 # =====================
 # Init
 # =====================
@@ -101,6 +146,8 @@ kernel = cv2.getStructuringElement(
 frame_count = 0
 last_time = time.time()
 fps = 0
+
+yolo_model = load_model()
 
 print("Motion-Gate gestartet – ESC zum Beenden")
 
@@ -141,8 +188,31 @@ while True:
         start_tracker(frame, (x, y, w, h))
 
     bbox = update_tracker(frame)
+
     if bbox is not None:
+        tracking_frames += 1
+
+        # Visualize Tracking
         draw_tracking(display, bbox)
+
+        # === STABIL ===
+        if tracking_frames >= TRACKING_STABLE_FRAMES and not detection_done:
+            print("Stable tracking - running YOLO on ROI")
+
+            detections = run_yolo_on_roi(frame, bbox)
+
+            if detections:
+                print(f"YOLO detections: {len(detections)}")
+
+                # HIER später Übergabe an main.py (Save + Upload)
+                print(detections)
+
+            detection_done = True
+    else:
+        # Lost Trackking - reset
+        tracking_frames = 0
+        detection_done = False
+
 
     check_tracker_timeout()
 

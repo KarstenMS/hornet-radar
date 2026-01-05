@@ -30,23 +30,24 @@ SUPABASE_KEY = "sb_secret_P7lY71HribtJdN1kIBw-Fw_6bCRZX50"
 BUCKET_NAME = "hornet-detections"
 TABLE_NAME = "sightings"
 
-# --- Motion_Gate Tracking Settings ---
-TRACKER_TYPE = "AUTO"       # Available: "KCF", "CSRT", "MOSSE", "AUTO"
-FRAME_SKIP = 3              # analyse only every 3rd frame (performance)
-TRACKER_TIMEOUT = 2.0       # Seconds without update → reset
+# --- Motion_Gate Tracking settings ---
+TRACKER_TYPE = "AUTO"           # Available: "KCF", "CSRT", "MOSSE", "AUTO"
+FRAME_SKIP = 3                  # analyse only every 3rd frame (performance)
+TRACKER_TIMEOUT = 2.0           # Seconds without update → reset
+TRACKING_STABLE_FRAMES = 5      # Number of frames to be stable before running detection
 
-MOTION_HISTORY = 300
-MOTION_VAR_THRESHOLD = 25
-MOTION_MIN_AREA = 500
+MOTION_HISTORY = 300            # Amount of frames used for Backgroundmodel ( low = faster but vulnerable to noise, high = slower, but stable background)
+MOTION_VAR_THRESHOLD = 25       # Sensibility of motion detection
+MOTION_MIN_AREA = 500           # Min pixel ara for being relevant
 
-MOTION_KERNEL_SIZE = 3
+MOTION_KERNEL_SIZE = 3          # Size of morphological filtering 
 
 # --- Camera configuration ---
-CAMERA_TYPE = "picamera2"   # "picamera2" | "webcam"
+CAMERA_TYPE = "picamera2"       # "picamera2" | "webcam"
 
 CAMERA_WIDTH = 1920
 CAMERA_HEIGHT = 1080
-THUMB_SIZE = 192, 108   #Pixel-Size for thumbnails 
+THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails 
 CAMERA_FPS = 30
 
 # Webcam only
@@ -57,3 +58,4 @@ PICAM_FORMAT = "RGB888"
 
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.8 # Optional: confidence threshold for detections
+x
