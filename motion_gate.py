@@ -176,6 +176,7 @@ while True:
 
     # === Status defaults ===
     motion_detected = False
+    tracking_frames = None
     motion_boxes = []
     bbox = None
 
