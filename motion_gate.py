@@ -52,11 +52,11 @@ def start_tracker(frame, bbox):
     tracker = create_tracker()
     tracker.init(frame, bbox)
 
-    tracking_active = True
     last_motion_time = time.time()
 
     tracking_frames = 0
     detection_done = False
+    tracking_active = True
 
 def update_tracker(frame):
     global tracking_active, last_motion_time
@@ -156,7 +156,7 @@ kernel = cv2.getStructuringElement(
 
 frame_count = 0
 last_time = time.time()
-fps = 0
+fps = 0.0
 
 yolo_model = load_model()
 
@@ -227,7 +227,13 @@ while True:
 
     check_tracker_timeout()
 
-    
+    # Update FPS
+    now = time.time()
+    dt = now - last_time
+    if dt > 0:
+        fps = 1.0 / dt
+    last_time = now
+
     # =====================
     # Debug Overlay
     # =====================
@@ -289,6 +295,11 @@ while True:
                     (255,255,255),
                     2)
 
+        print(
+            "tracking_active:", tracking_active,
+            "| tracking_frames:", tracking_frames,
+            "| detection_done:", detection_done
+        )
 
 
         cv2.imshow("Hornet Debug", display)
