@@ -9,6 +9,7 @@ from detection import load_model, run_detection
 from storage import get_last_detection_id
 from helpers import ensure_directories
 from pipeline_utils import save_and_upload_detection_frame
+from motion_gate import process_frame
 from config import *
 
 
@@ -98,27 +99,12 @@ def video_tracking(videos_dir, model, start_detection_id):
 
 def camera_tracking(model, start_detection_id):
 
-    model = model
-    start_detection_id = start_detection_id
+    event = motion_gate.process_frame(frame)
 
-    from camera import Camera
-
-    cam = Camera()
-
-    while True:
-        frame = cam.read()
-        if frame is None:
-            print("Cannot read camera")
-            break
-
-        # OpenCV processing
-        cv2.imshow("Debug", frame)
-
-        if cv2.waitKey(1) & 0xFF == 27:
-            break
-
-    cam.release()
-    cv2.destroyAllWindows()
+    if event:
+        if event.confidence >= CONFIDENCE_THRESHOLD:
+            save_event(event)
+            upload_event(event)
 
 
        

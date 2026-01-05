@@ -5,6 +5,7 @@ from camera import Camera
 from config import *
 from detection import load_model, run_detection
 from tracking_state import TrackingState
+from event import DetectionEvent
 
 
 # ============================================================
@@ -184,12 +185,28 @@ while True:
 
         if detections:
             print("YOLO detections:", detections)
+            confidence = max(d["confidence"] for d in detections)
 
+            event = DetectionEvent(
+            pi_id=PI_ID,
+            detections=detections,
+            model_name="yolov5-hornet",
+            racking_bbox=bbox,
+            roi_bbox=roi_bbox,
+            tracking_frames=tracking_state.frames_tracked,
+            frame_shape=frame.shape[:2]
+        )
+
+        if event:
+            print(event)
+
+    
         tracking_state.detection_done = True
 
     # ========================================================
     # Timeout
     # ========================================================
+
 
     if tracking_state.active and tracking_state.is_timed_out(TRACKER_TIMEOUT):
         print("Tracking timeout → reset")
