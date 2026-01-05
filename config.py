@@ -45,8 +45,8 @@ MOTION_KERNEL_SIZE = 3          # Size of morphological filtering
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"       # "picamera2" | "webcam"
 
-CAMERA_WIDTH = 1920
-CAMERA_HEIGHT = 1080
+CAMERA_WIDTH = 1024
+CAMERA_HEIGHT = 768
 THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails 
 CAMERA_FPS = 30
 
@@ -58,4 +58,3 @@ PICAM_FORMAT = "RGB888"
 
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.8 # Optional: confidence threshold for detections
-x
