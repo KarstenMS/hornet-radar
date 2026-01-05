@@ -195,7 +195,7 @@ while True:
         print("Tracking timeout → reset")
         tracking_state.reset()
 
-    print(tracking_state)
+    print(tracking_state.last_update)
 
     # ========================================================
     # Debug Overlay
