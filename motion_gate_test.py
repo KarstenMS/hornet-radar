@@ -16,7 +16,7 @@ Camera frame
 import cv2
 import time
 from typing import Optional, Tuple, List
-
+from camera import Camera
 from config import *
 from detection import load_model, run_detection
 
