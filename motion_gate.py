@@ -295,10 +295,13 @@ while True:
                     (255,255,255),
                     2)
 
-        print(
+        #temp print
+        print(          
             "tracking_active:", tracking_active,
             "| tracking_frames:", tracking_frames,
-            "| detection_done:", detection_done
+            "| detection_done:", detection_done,
+            "| last_motion_time:", last_motion_time,
+
         )
 
 
