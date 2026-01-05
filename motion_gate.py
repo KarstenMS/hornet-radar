@@ -161,7 +161,7 @@ fps = 0.0
 yolo_model = load_model()
 
 # === Status defaults ===
-
+last_motion_detected_time = 0
 tracking_frames = 0
 detection_done = False
 tracking_active = False
@@ -202,12 +202,15 @@ while True:
         contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for c in contours:
+
+            # == Detecting Motions ===
             if cv2.contourArea(c) < MOTION_MIN_AREA:
                 continue
 
             x, y, w, h = cv2.boundingRect(c)
             motion_boxes.append((x, y, w, h))
             motion_detected = True
+            last_motion_detected_time = time.time()
             cv2.rectangle(display, (x,y), (x+w,y+h), (0,255,255), 2)
 
         if motion_detected and not tracking_active:
@@ -215,6 +218,13 @@ while True:
             start_tracker(frame, (x, y, w, h))
 
         bbox = update_tracker(frame)
+
+        # === Abort tracking if no motion for too long ===
+        if tracking_active:
+            if time.time() - last_motion_detected_time > MOTION_TRACK_LOST_TIMEOUT:
+                print("No motion → stopping tracking")
+                reset_tracking()
+
 
         if bbox is not None:
             tracking_frames += 1

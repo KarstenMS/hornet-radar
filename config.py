@@ -43,6 +43,7 @@ MOTION_VAR_THRESHOLD = 25       # Sensibility of motion detection
 MOTION_MIN_AREA = 500           # Min pixel ara for being relevant
 
 MOTION_KERNEL_SIZE = 3          # Size of morphological filtering 
+MOTION_TRACK_LOST_TIMEOUT = 3.0 # Seconds, after which tracking stopps, if no motion. 
 
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"       # "picamera2" | "webcam"
