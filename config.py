@@ -35,7 +35,7 @@ TABLE_NAME = "sightings"
 # --- Motion_Gate Tracking settings ---
 TRACKER_TYPE = "AUTO"           # Available: "KCF", "CSRT", "MOSSE", "AUTO"
 FRAME_SKIP = 3                  # analyse only every 3rd frame (performance)
-TRACKER_TIMEOUT = 2.0           # Seconds without update → reset
+TRACKER_TIMEOUT = 5.0           # Seconds without update → reset
 TRACKING_STABLE_FRAMES = 5      # Number of frames to be stable before running detection
 
 MOTION_HISTORY = 300            # Amount of frames used for Backgroundmodel ( low = faster but vulnerable to noise, high = slower, but stable background)

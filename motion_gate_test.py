@@ -220,6 +220,12 @@ while True:
                     f"Frames: {tracking_state.frames_tracked}",
                     (10, y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
+        
+        y += step
+        cv2.putText(display,
+                    f"YOLO done: {'YES' if tracking_state.detection_done else 'NO'}",
+                    (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                    (0,255,0) if tracking_state.detection_done else (0,0,255), 2)
 
         cv2.imshow("Hornet Debug", display)
         if cv2.waitKey(1) & 0xFF == 27:
