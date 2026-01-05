@@ -10,6 +10,8 @@ PI_ID = "PI_02"
 LATITUDE = 48.153091394201636       # Get the values from Google maps
 LONGITUDE = 11.429636367430676
 
+SHOW_DEBUG_VIDEO = True             # Shows Debug Video on the PI (requires GUI), default False
+
 # --- Directories ---
 ROOT = "/home/hornet1/hornet-radar"
 

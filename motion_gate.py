@@ -54,7 +54,7 @@ def start_tracker(frame, bbox):
 
     tracking_active = True
     last_motion_time = time.time()
-    
+
     tracking_frames = 0
     detection_done = False
 
@@ -70,14 +70,25 @@ def update_tracker(frame):
         last_motion_time = time.time()
         return bbox
     else:
-        tracking_active = False
+        reset_tracking()
         return None
     
+def reset_tracking():
+    global tracker, tracking_active
+    global tracking_frames, detection_done
+
+    tracker = None
+    tracking_active = False
+    tracking_frames = 0
+    detection_done = False
+
+    print("Tracking reset")
+
 def check_tracker_timeout():
     global tracking_active
 
     if tracking_active and time.time() - last_motion_time > TRACKER_TIMEOUT:
-        tracking_active = False
+        reset_tracking()
 
 def draw_tracking(frame, bbox):
     x, y, w, h = map(int, bbox)
@@ -216,14 +227,74 @@ while True:
 
     check_tracker_timeout()
 
-    cv2.putText(display, f"Motion: {'YES' if motion_detected else 'NO'}",
-                (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                (0,0,255) if motion_detected else (0,255,0), 2)
+    
+    # =====================
+    # Debug Overlay
+    # =====================
 
-    cv2.imshow("Hornet Debug", display)
+    if SHOW_DEBUG_VIDEO:
+    
+        y = 20
+        line = 25
 
-    if cv2.waitKey(1) & 0xFF == 27:
-        break
+        cv2.putText(display, f"PI: {PI_ID}", (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
+
+        y += line
+        cv2.putText(display, f"FPS: {fps:.1f}", (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
+
+        y += line
+        cv2.putText(display,
+                    f"Motion: {'YES' if motion_detected else 'NO'}",
+                    (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0,0,255) if motion_detected else (0,255,0),
+                    2)
+
+        y += line
+        cv2.putText(display,
+                    f"Tracking: {'YES' if tracking_active else 'NO'}",
+                    (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0,255,255) if tracking_active else (150,150,150),
+                    2)
+
+        y += line
+        cv2.putText(display,
+                    f"Tracking frames: {tracking_frames}",
+                    (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (255,255,255),
+                    2)
+
+        y += line
+        cv2.putText(display,
+                    f"YOLO done: {'YES' if detection_done else 'NO'}",
+                    (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0,255,0) if detection_done else (0,0,255),
+                    2)
+
+        y += line
+        cv2.putText(display,
+                    f"Tracker: {TRACKER_TYPE}",
+                    (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (255,255,255),
+                    2)
+
+
+
+        cv2.imshow("Hornet Debug", display)
+
+        if cv2.waitKey(1) & 0xFF == 27:
+            break
 
 
 # =====================
