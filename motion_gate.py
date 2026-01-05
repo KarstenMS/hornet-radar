@@ -174,65 +174,65 @@ while True:
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     display = frame.copy()
 
-    frame_count += 1
-    if frame_count % FRAME_SKIP != 0:
-        cv2.imshow("Hornet Debug", display)
-        continue
-
-    fg_mask = bg_subtractor.apply(frame)
-    contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    motion_detected = False
-    motion_boxes = []
-
-    for c in contours:
-        if cv2.contourArea(c) < MOTION_MIN_AREA:
-            continue
-
-        x, y, w, h = cv2.boundingRect(c)
-        motion_boxes.append((x, y, w, h))
-        motion_detected = True
-        cv2.rectangle(display, (x,y), (x+w,y+h), (0,255,255), 2)
-
-    if motion_detected and not tracking_active:
-        x, y, w, h = max(motion_boxes, key=lambda b: b[2]*b[3])
-        start_tracker(frame, (x, y, w, h))
-
-    bbox = update_tracker(frame)
-
-    if bbox is not None:
-        tracking_frames += 1
-
-        # Visualize Tracking
-        draw_tracking(display, bbox)
-
-        # === STABIL ===
-        if tracking_frames >= TRACKING_STABLE_FRAMES and not detection_done:
-            print("Stable tracking - running YOLO on ROI")
-
-            detections = run_yolo_on_roi(frame, bbox)
-
-            if detections:
-                print(f"YOLO detections: {len(detections)}")
-
-                # HIER später Übergabe an main.py (Save + Upload)
-                print(detections)
-
-            detection_done = True
-    else:
-        # Lost Trackking - reset
-        tracking_frames = 0
-        detection_done = False
-
-
-    check_tracker_timeout()
-
     # Update FPS
     now = time.time()
     dt = now - last_time
     if dt > 0:
         fps = 1.0 / dt
     last_time = now
+
+    frame_count += 1
+    process_this_frame = (frame_count % FRAME_SKIP == 0)
+    if process_this_frame:
+    
+        fg_mask = bg_subtractor.apply(frame)
+        contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        motion_detected = False
+        motion_boxes = []
+
+        for c in contours:
+            if cv2.contourArea(c) < MOTION_MIN_AREA:
+                continue
+
+            x, y, w, h = cv2.boundingRect(c)
+            motion_boxes.append((x, y, w, h))
+            motion_detected = True
+            cv2.rectangle(display, (x,y), (x+w,y+h), (0,255,255), 2)
+
+        if motion_detected and not tracking_active:
+            x, y, w, h = max(motion_boxes, key=lambda b: b[2]*b[3])
+            start_tracker(frame, (x, y, w, h))
+
+        bbox = update_tracker(frame)
+
+        if bbox is not None:
+            tracking_frames += 1
+
+            # Visualize Tracking
+            draw_tracking(display, bbox)
+
+            # === STABIL ===
+            if tracking_frames >= TRACKING_STABLE_FRAMES and not detection_done:
+                print("Stable tracking - running YOLO on ROI")
+
+                detections = run_yolo_on_roi(frame, bbox)
+
+                if detections:
+                    print(f"YOLO detections: {len(detections)}")
+
+                    # HIER später Übergabe an main.py (Save + Upload)
+                    print(detections)
+
+                detection_done = True
+        else:
+            # Lost Trackking - reset
+            reset_tracking()
+
+
+        check_tracker_timeout()
+        cv2.imshow("Hornet Debug", display)
+
 
     # =====================
     # Debug Overlay
