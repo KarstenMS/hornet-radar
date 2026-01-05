@@ -74,13 +74,13 @@ def update_tracker(frame):
         return None
     
 def reset_tracking():
-    global tracker, tracking_active
-    global tracking_frames, detection_done
+    global tracker, tracking_active, tracking_frames, detection_done, bbox
 
     tracker = None
     tracking_active = False
     tracking_frames = 0
     detection_done = False
+    bbox = None
 
     print("Tracking reset")
 
@@ -161,11 +161,11 @@ fps = 0.0
 yolo_model = load_model()
 
 # === Status defaults ===
-motion_detected = False
+
 tracking_frames = 0
 detection_done = False
 tracking_active = False
-motion_boxes = []
+
 bbox = None
 
 print("Motion-Gate gestartet – ESC zum Beenden")
@@ -181,6 +181,10 @@ while True:
 
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     display = frame.copy()
+
+    ## === Reset per Frame ===
+    motion_detected = False
+    motion_boxes = []
 
     # === Update FPS ===
     now = time.time()
@@ -235,10 +239,8 @@ while True:
             # === Trackking lost - reset ===
             reset_tracking()
 
-
         check_tracker_timeout()
-        cv2.imshow("Hornet Debug", display)
-
+   
 
     # =====================
     # Debug Overlay
