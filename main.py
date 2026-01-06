@@ -14,6 +14,7 @@ from motion_gate import MotionGate
 from config import *
 from camera import Camera
 from event_storage import save_event, upload_event
+from sources import FrameSource
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--videos', default=False, action='store_true',
@@ -22,21 +23,39 @@ parser.add_argument('-i', '--images', default=False, action='store_true',
                     help="Analyses any .jpg from detections/frames")
 args = parser.parse_args()
 
+def get_frame_source_from_args(args) -> FrameSource:
+    if args.images:
+        return FrameSource.IMAGE
+    if args.videos:
+        return FrameSource.VIDEO
+    return FrameSource.CAMERA
 
-def image_recognition(frames_dir, model, start_detection_id):
-    detection_id = start_detection_id
 
+def image_recognition(frames_dir, model, source):
+
+    
     for image_name in os.listdir(frames_dir):
         if not image_name.lower().endswith(".jpg"):
             continue
 
-
         image_path = os.path.join(frames_dir, image_name)
         print(f"Processing {image_name} ...")
 
-        img = cv2.imread(image_path)
-        if img is None:
+        frame = cv2.imread(image_path)
+        if frame is None:
             continue
+
+        event, debug = run_detection(frame, source)
+
+        if event:
+            if event.confidence >= CONFIDENCE_THRESHOLD:
+                event_dir = save_event(event, frame)
+                
+            if event_dir:
+                upload_event(event)
+
+
+
 
         # --- YOLO detection ---
         predictions = run_detection(img, model)
@@ -99,11 +118,10 @@ def video_tracking(videos_dir, model, start_detection_id):
         if not found:
             print(f"No hornets detected in {video_name}.")
 
-def camera_tracking(model, start_detection_id):
+def camera_tracking(model):
 
     cam = Camera()
     motion_gate = MotionGate(model)
-    start_detection_id = start_detection_id
 
     last_time = time.time()
     fps = 0.0
@@ -178,22 +196,21 @@ def main():
     
     ensure_directories(FRAMES_DIR, LABELED_FRAMES_DIR, LABELED_FRAMES_THUMBS_DIR, VIDEOS_DIR, LABELED_VIDEOS_DIR, LABELED_VIDEOS_THUMBS_DIR)
     model = load_model()
-    
-    start_detection_id = get_last_detection_id(PI_ID) #Continue with latest detection_id from Supabase
-    print(f"Starting detection_id at {start_detection_id}")
+    source = get_frame_source_from_args(args)
 
-    if args.images:
+    if source == FrameSource.IMAGE:
         print(f"Reading {FRAMES_DIR} directory.") 
-        image_recognition(FRAMES_DIR, model, start_detection_id)
-    elif args.videos:
-        print(f"Reading {VIDEOS_DIR} directory.") 
-        video_tracking(VIDEOS_DIR, model, start_detection_id)
+        image_recognition(FRAMES_DIR, model, source)
+
+    elif source == FrameSource.VIDEO:
+        print(f"Reading {FRAMES_DIR} directory.") 
+        video_tracking(VIDEOS_DIR, model, source)
+
     else:
         print(f"Capturing from camera with {CAMERA_FPS} FPS") 
-        camera_tracking(model, start_detection_id)
+        camera_tracking(model, source)
 
-
-        
+       
 
 if __name__ == "__main__":
     main()

@@ -1,9 +1,14 @@
 # motion_gate.py
 import cv2
+import time
 from config import *
-from detection import run_detection
+from detection import load_model, run_detection
 from tracking_state import TrackingState
 from event import DetectionEvent
+from image_recognition import ImageRecognition
+from sources import FrameSource
+from typing import Tuple, Optional, Dict
+
 
 # ============================================================
 # Classes
@@ -11,14 +16,27 @@ from event import DetectionEvent
 
 class MotionGate:
     """
-    Handles motion detection, tracking and ROI-based YOLO detection.
-    Produces DetectionEvent objects.
+    MotionGate is responsible for:
+    - motion detection
+    - object tracking
+    - triggering YOLO
+    - creating DetectionEvent objects
+
+    It does NOT:
+    - save files
+    - upload data
+    - know argparse or CLI flags
     """
 
-    def __init__(self, model):
-        self.model = model
-        self.tracking_state = TrackingState()
+    def __init__(self):
+        # --- YOLO ---
+        self.model = load_model()
 
+         # --- Tracking ---
+        self.tracking_state = TrackingState()
+        self.tracker = None
+
+        # --- Motion detection ---
         self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
             history=MOTION_HISTORY,
             varThreshold=MOTION_VAR_THRESHOLD,
@@ -30,129 +48,169 @@ class MotionGate:
             (MOTION_KERNEL_SIZE, MOTION_KERNEL_SIZE)
         )
 
-        self.frame_count = 0
+        # --- FPS (camera only) ---
+        self.last_time = time.time()
+        self.fps = 0.0
 
-    def process_frame(self, frame):
-    
+    def process_frame(self, frame, source: FrameSource) -> Tuple[Optional[DetectionEvent], Dict]:
+
         """
         Process one frame.
         Returns DetectionEvent or None.
         """
-        event = None
         debug = {
+            "source": source.value,
             "motion": False,
-            "tracking": self.tracking_state.active,
-            "frames": self.tracking_state.frames_tracked,
-            "yolo_done": self.tracking_state.detection_done,
-            "bbox": self.tracking_state.bbox
+            "tracking": False,
+            "frames": 0,
+            "yolo_done": False,
+            "fps": None,
         }
 
-        self.frame_count += 1
-        process_this_frame = (self.frame_count % FRAME_SKIP == 0)
+        if source == FrameSource.IMAGE:
+            return self._process_image(frame, debug)
 
-        motion_detected = False
-        motion_boxes = []
+        if source == FrameSource.VIDEO:
+            return self._process_video(frame, debug)
 
-        # ------------------------------------------------
-        # Motion Detection
-        # ------------------------------------------------
-
-        if process_this_frame:
-            fg_mask = self.bg_subtractor.apply(frame)
-            fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, self.kernel)
-
-            contours, _ = cv2.findContours(
-                fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
-
-            for c in contours:
-                if cv2.contourArea(c) < MOTION_MIN_AREA:
-                    continue
-
-                x, y, w, h = cv2.boundingRect(c)
-                motion_boxes.append((x, y, w, h))
-                motion_detected = True
-                debug["motion"] = motion_detected
-
-            if motion_detected and not self.tracking_state.active:
-                bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
-                tracker = create_tracker()
-                tracker.init(frame, bbox)
-                self.tracking_state.start(tracker, bbox)
-
-            if self.tracking_state.active:
-                ok, bbox = self.tracking_state.tracker.update(frame)
-                if ok:
-                    self.tracking_state.update(bbox)
-                else:
-                    self.tracking_state.reset()
-                    return None, debug
-                
-            debug["tracking"] = self.tracking_state.active
-            debug["frames"] = self.tracking_state.frames_tracked
-
-            if self.tracking_state.is_stable(TRACKING_STABLE_FRAMES) and not self.tracking_state.detection_done:
-
-                detections = run_yolo_on_roi(frame, self.tracking_state.bbox, self.model)
-
-                self.tracking_state.detection_done = True
-                debug["yolo_done"] = self.tracking_state.detection_done
-                debug["bbox"] = self.tracking_state.bbox
-
-                if not detections:
-                    return None, debug
-
-                event = DetectionEvent(
-                    pi_id=PI_ID,
-                    detections=detections,
-                    model_name="yolov5",
-                    tracking_bbox=self.tracking_state.bbox,
-                    roi_bbox=self.tracking_state.bbox,
-                    tracking_frames=self.tracking_state.frames_tracked,
-                    frame_shape=frame.shape[:2]
-                )
+        if source == FrameSource.CAMERA:
+            return self._process_camera(frame, debug)
+     
+        raise ValueError(f"Unsupported FrameSource: {source}")        
 
 
-                
-                return event, debug
+    def _process_camera(self, frame, debug):
+        # --- FPS ---
+        now = time.time()
+        dt = now - self.last_time
+        if dt > 0:
+            self.fps = 1.0 / dt
+        self.last_time = now
+        debug["fps"] = self.fps
 
+        motion_boxes = self._update_motion(frame, debug)
+        self._update_tracking(frame, motion_boxes, debug)
 
-            
-            
-            if self.tracking_state.is_timed_out(TRACKER_TIMEOUT):
-                self.tracking_state.reset()
+        event = self._maybe_run_yolo(frame, debug)
+        return event, debug
 
+    def _process_video(self, frame, debug):
+        motion_boxes = self._update_motion(frame, debug)
+        self._update_tracking(frame, motion_boxes, debug)
+
+        event = self._maybe_run_yolo(frame, debug)
+        return event, debug
+
+    def _process_image(self, frame, debug):
+        debug["motion"] = True
+        debug["tracking"] = False
+
+        detections = run_detection(frame, self.model)
+        if not detections:
             return None, debug
+
+        event = DetectionEvent(
+            pi_id=PI_ID,
+            detections=detections,
+            model_name="yolo-image",
+            frame_shape=frame.shape[:2],
+        )
+
+        debug["yolo_ran"] = True
+        return event, debug
+
+    def _update_motion(self, frame, debug):
+        fg = self.bg_subtractor.apply(frame)
+        fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, self.kernel)
+
+        contours, _ = cv2.findContours(
+            fg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        boxes = []
+        for c in contours:
+            if cv2.contourArea(c) < MOTION_MIN_AREA:
+                continue
+            boxes.append(cv2.boundingRect(c))
+
+        debug["motion"] = bool(boxes)
+        return boxes
+
+    def _update_tracking(self, frame, motion_boxes, debug):
+        if motion_boxes and not self.tracking_state.active:
+            bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
+            self.tracker = self._create_tracker()
+            self.tracker.init(frame, bbox)
+            self.tracking_state.start(self.tracker, bbox)
+
+        if not self.tracking_state.active:
+            return
+
+        ok, bbox = self.tracking_state.tracker.update(frame)
+        if ok:
+            self.tracking_state.update(bbox)
+            debug["tracking"] = True
+            debug["frames_tracked"] = self.tracking_state.frames_tracked
+        else:
+            self.tracking_state.reset()
+
+        if self.tracking_state.is_timed_out(TRACKER_TIMEOUT):
+            self.tracking_state.reset()
+
+    def _maybe_run_yolo(self, frame, debug):
         
-        return event, debug  
-# ============================================================
-# Tracker Factory
-# ============================================================
+        if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
+            return None
 
-def create_tracker():
-    t = TRACKER_TYPE.upper()
+        if self.tracking_state.detection_done:
+            return None
 
-    if t == "KCF" and hasattr(cv2, "TrackerKCF_create"):
-        print("Tracker: KCF")
-        return cv2.TrackerKCF_create()
+        roi, _ = extract_roi(frame, self.tracking_state.bbox)
+        detections = run_detection(roi, self.model)
 
-    if t == "CSRT" and hasattr(cv2, "TrackerCSRT_create"):
-        print("Tracker: CSRT")
-        return cv2.TrackerCSRT_create()
+        self.tracking_state.detection_done = True
+        debug["yolo_ran"] = True
 
-    if t == "MOSSE" and hasattr(cv2, "TrackerMOSSE_create"):
-        print("Tracker: MOSSE")
-        return cv2.TrackerMOSSE_create()
+        if not detections:
+            return None
 
-    if t == "AUTO":
-        if hasattr(cv2, "TrackerKCF_create"):
-            print("Tracker: AUTO → KCF")
+        return DetectionEvent(
+            pi_id=PI_ID,
+            detections=detections,
+            model_name="yolo-motion",
+            tracking_bbox=self.tracking_state.bbox,
+            tracking_frames=self.tracking_state.frames_tracked,
+            frame_shape=frame.shape[:2],
+        )      
+
+    # ============================================================
+    # Tracker Factory
+    # ============================================================
+
+    def create_tracker():
+        t = TRACKER_TYPE.upper()
+
+        if t == "KCF" and hasattr(cv2, "TrackerKCF_create"):
+            print("Tracker: KCF")
             return cv2.TrackerKCF_create()
-        if hasattr(cv2, "TrackerCSRT_create"):
-            print("Tracker: AUTO → CSRT")
+
+        if t == "CSRT" and hasattr(cv2, "TrackerCSRT_create"):
+            print("Tracker: CSRT")
             return cv2.TrackerCSRT_create()
 
-    raise RuntimeError("No suitable OpenCV tracker available")
+        if t == "MOSSE" and hasattr(cv2, "TrackerMOSSE_create"):
+            print("Tracker: MOSSE")
+            return cv2.TrackerMOSSE_create()
+
+        if t == "AUTO":
+            if hasattr(cv2, "TrackerKCF_create"):
+                print("Tracker: AUTO → KCF")
+                return cv2.TrackerKCF_create()
+            if hasattr(cv2, "TrackerCSRT_create"):
+                print("Tracker: AUTO → CSRT")
+                return cv2.TrackerCSRT_create()
+
+        raise RuntimeError("No suitable OpenCV tracker available")
 
 # ============================================================
 # Tracking helpers
@@ -166,7 +224,6 @@ def draw_tracking(frame, bbox):
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6, (0, 255, 255), 2)
 
-
 def extract_roi(frame, bbox):
     x, y, w, h = map(int, bbox)
     h_f, w_f = frame.shape[:2]
@@ -178,7 +235,6 @@ def extract_roi(frame, bbox):
 
     roi = frame[y:y + h, x:x + w]
     return roi, (x, y)
-
 
 def run_yolo_on_roi(frame, bbox, model):
     roi, offset = extract_roi(frame, bbox)
@@ -202,3 +258,27 @@ def run_yolo_on_roi(frame, bbox, model):
         })
 
     return detections
+
+    if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
+        return None
+
+    if self.tracking_state.detection_done:
+        return None
+
+    roi, _ = extract_roi(frame, self.tracking_state.bbox)
+    detections = run_detection(roi, self.model)
+
+    self.tracking_state.detection_done = True
+    debug["yolo_ran"] = True
+
+    if not detections:
+        return None
+
+    return DetectionEvent(
+        pi_id=PI_ID,
+        detections=detections,
+        model_name="yolo-motion",
+        tracking_bbox=self.tracking_state.bbox,
+        tracking_frames=self.tracking_state.frames_tracked,
+        frame_shape=frame.shape[:2],
+    )

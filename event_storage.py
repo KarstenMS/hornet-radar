@@ -135,7 +135,7 @@ def upload_event(event: DetectionEvent) -> bool:
     # --- Build JSON ---
     data = {
         "pi_id": event.pi_id,
-        "timestamp": timestamp(),
+        "timestamp": event.timestamp,
         "confidence": event.confidence,
         "species": [
             "asian_hornet" if d["class_id"] == 1 else "european_hornet"
