@@ -112,7 +112,7 @@ def camera_tracking(model, start_detection_id):
         if frame is None:
             break
 
-        now = time.time()
+        now = timestamp
         dt = now - last_time
         if dt > 0:
             fps = 1.0 / dt
@@ -122,8 +122,9 @@ def camera_tracking(model, start_detection_id):
 
         if event:
             if event.confidence >= CONFIDENCE_THRESHOLD:
-                save_event(event)
-                upload_event(event)
+                #save_event(event)
+                #upload_event(event)
+                print(f"Event created: {event}")
 
 
         if SHOW_DEBUG_VIDEO:

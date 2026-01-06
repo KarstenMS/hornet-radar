@@ -1,9 +1,7 @@
 # motion_gate.py
 import cv2
-import time
-
 from config import *
-from detection import load_model, run_detection
+from detection import run_detection
 from tracking_state import TrackingState
 from event import DetectionEvent
 
@@ -116,10 +114,7 @@ class MotionGate:
             if self.tracking_state.is_timed_out(TRACKER_TIMEOUT):
                 self.tracking_state.reset()
 
-            return None
-
-
-        
+            return None    
         
 # ============================================================
 # Tracker Factory
@@ -150,7 +145,6 @@ def create_tracker():
 
     raise RuntimeError("No suitable OpenCV tracker available")
 
-
 # ============================================================
 # Tracking helpers
 # ============================================================
@@ -177,12 +171,12 @@ def extract_roi(frame, bbox):
     return roi, (x, y)
 
 
-def run_yolo_on_roi(frame, bbox):
+def run_yolo_on_roi(frame, bbox, model):
     roi, offset = extract_roi(frame, bbox)
     if roi.size == 0:
         return []
 
-    predictions = run_detection(roi, yolo_model)
+    predictions = run_detection(roi, model)
 
     detections = []
     for p in predictions:
@@ -199,169 +193,3 @@ def run_yolo_on_roi(frame, bbox):
         })
 
     return detections
-
-
-# ============================================================
-# Init
-# ============================================================
-
-cam = Camera()
-yolo_model = load_model()
-tracking_state = TrackingState()
-
-bg_subtractor = cv2.createBackgroundSubtractorMOG2(
-    history=MOTION_HISTORY,
-    varThreshold=MOTION_VAR_THRESHOLD,
-    detectShadows=False
-)
-
-kernel = cv2.getStructuringElement(
-    cv2.MORPH_ELLIPSE,
-    (MOTION_KERNEL_SIZE, MOTION_KERNEL_SIZE)
-)
-
-frame_count = 0
-last_time = time.time()
-fps = 0.0
-
-print("Motion-Gate gestartet – ESC zum Beenden")
-
-
-# ============================================================
-# Main Loop
-# ============================================================
-
-while True:
-    frame = cam.picam2.capture_array()
-    if frame is None:
-        break
-
-    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    display = frame.copy()
-
-    # --- FPS ---
-    now = time.time()
-    dt = now - last_time
-    if dt > 0:
-        fps = 1.0 / dt
-    last_time = now
-
-    frame_count += 1
-    process_frame = (frame_count % FRAME_SKIP == 0)
-
-    motion_detected = False
-    motion_boxes = []
-
-    # ========================================================
-    # Motion Detection
-    # ========================================================
-    if process_frame:
-        fg_mask = bg_subtractor.apply(frame)
-        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel)
-
-        contours, _ = cv2.findContours(
-            fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
-
-        for c in contours:
-            if cv2.contourArea(c) < MOTION_MIN_AREA:
-                continue
-
-            x, y, w, h = cv2.boundingRect(c)
-            motion_boxes.append((x, y, w, h))
-            motion_detected = True
-
-        # Start tracking on largest motion
-        if motion_detected and not tracking_state.active:
-            bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
-            tracker = create_tracker()
-            tracker.init(frame, bbox)
-            tracking_state.start(tracker, bbox)
-
-    # ========================================================
-    # Tracking update
-    # ========================================================
-    if tracking_state.active:
-        ok, bbox = tracking_state.tracker.update(frame)
-        if ok:
-            tracking_state.update(bbox)
-            draw_tracking(display, bbox)
-        else:
-            tracking_state.reset()
-
-    # ========================================================
-    # YOLO (once per tracking)
-    # ========================================================
-    if tracking_state.is_stable(TRACKING_STABLE_FRAMES) and not tracking_state.detection_done:
-        print("Stable tracking → YOLO on ROI")
-        detections = run_yolo_on_roi(frame, tracking_state.bbox)
-
-        if detections:
-            print("YOLO detections:", detections)
-            confidence = max(d["confidence"] for d in detections)
-
-            event = DetectionEvent(
-            pi_id=PI_ID,
-            detections=detections,
-            model_name="yolov5-hornet",
-            racking_bbox=bbox,
-            roi_bbox=roi_bbox,
-            tracking_frames=tracking_state.frames_tracked,
-            frame_shape=frame.shape[:2]
-        )
-
-        if event:
-            print(event)
-
-    
-        tracking_state.detection_done = True
-
-    # ========================================================
-    # Timeout
-    # ========================================================
-
-
-    if tracking_state.active and tracking_state.is_timed_out(TRACKER_TIMEOUT):
-        print("Tracking timeout → reset")
-        tracking_state.reset()
-
-
-    # ========================================================
-    # Debug Overlay
-    # ========================================================
-    if SHOW_DEBUG_VIDEO:
-        y = 20
-        step = 22
-
-        cv2.putText(display, f"FPS: {fps:.1f}", (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
-        y += step
-        cv2.putText(display,
-                    f"Motion: {'YES' if motion_detected else 'NO'}",
-                    (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                    (0,0,255) if motion_detected else (0,255,0), 2)
-        y += step
-        cv2.putText(display,
-                    f"Tracking: {'YES' if tracking_state.active else 'NO'}",
-                    (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                    (0,255,255) if tracking_state.active else (150,150,150), 2)
-        y += step
-        cv2.putText(display,
-                    f"Frames: {tracking_state.frames_tracked}",
-                    (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
-        
-        y += step
-        cv2.putText(display,
-                    f"YOLO done: {'YES' if tracking_state.detection_done else 'NO'}",
-                    (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                    (0,255,0) if tracking_state.detection_done else (0,0,255), 2)
-
-        cv2.imshow("Hornet Debug", display)
-        if cv2.waitKey(1) & 0xFF == 27:
-            break
-
-
-
