@@ -13,6 +13,7 @@ from pipeline_utils import save_and_upload_detection_frame
 from motion_gate import MotionGate
 from config import *
 from camera import Camera
+from event_storage import save_event
 
 
 parser = argparse.ArgumentParser()
@@ -124,9 +125,9 @@ def camera_tracking(model, start_detection_id):
 
         if event:
             if event.confidence >= CONFIDENCE_THRESHOLD:
-                #save_event(event)
+                event_dir = save_event(event)
                 #upload_event(event)
-                print(f"Event created: {event}")
+                print(f"Event detected and saved: {event_dir}")
 
 
         if SHOW_DEBUG_VIDEO:

@@ -26,6 +26,8 @@ VIDEOS_DIR = os.path.join(ROOT, "detections/videos")     # For analysing videos
 LABELED_VIDEOS_DIR = os.path.join(ROOT, "detections/labled-videos")    
 LABELED_VIDEOS_THUMBS_DIR = os.path.join(LABELED_VIDEOS_DIR, "thumbnails")  
 
+EVENTS_DIR = os.path.join(ROOT, "detections", "events")
+
 # --- Supabase ---
 SUPABASE_URL = "https://lebtnjdpjntaqheahjoi.supabase.co"
 SUPABASE_KEY = "sb_secret_P7lY71HribtJdN1kIBw-Fw_6bCRZX50"
@@ -61,5 +63,5 @@ PICAM_FORMAT = "RGB888"
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.8 # Optional: confidence threshold for detections
 
-# --- Miscellaneous ---
+# --- Save event ---
 THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails 
