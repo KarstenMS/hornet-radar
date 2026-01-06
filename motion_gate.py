@@ -37,7 +37,7 @@ class MotionGate:
         Process one frame.
         Returns DetectionEvent or None.
         """
-
+        event = None
         debug = {
             "motion": False,
             "tracking": self.tracking_state.active,
@@ -71,6 +71,7 @@ class MotionGate:
                 x, y, w, h = cv2.boundingRect(c)
                 motion_boxes.append((x, y, w, h))
                 motion_detected = True
+                debug["motion"] = motion_detected
 
             if motion_detected and not self.tracking_state.active:
                 bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
@@ -84,16 +85,21 @@ class MotionGate:
                     self.tracking_state.update(bbox)
                 else:
                     self.tracking_state.reset()
-                    return None
+                    return None, debug
+                
+            debug["tracking"] = self.tracking_state.active
+            debug["frames"] = self.tracking_state.frames_tracked
 
             if self.tracking_state.is_stable(TRACKING_STABLE_FRAMES) and not self.tracking_state.detection_done:
 
                 detections = run_yolo_on_roi(frame, self.tracking_state.bbox, self.model)
 
                 self.tracking_state.detection_done = True
+                debug["yolo_done"] = self.tracking_state.detection_done
+                debug["bbox"] = self.tracking_state.bbox
 
                 if not detections:
-                    return None
+                    return None, debug
 
                 event = DetectionEvent(
                     pi_id=PI_ID,
@@ -105,7 +111,8 @@ class MotionGate:
                     frame_shape=frame.shape[:2]
                 )
 
-                debug["motion"] = motion_detected
+
+                
                 return event, debug
 
 
