@@ -121,7 +121,7 @@ class MotionGate:
             if self.tracking_state.is_timed_out(TRACKER_TIMEOUT):
                 self.tracking_state.reset()
 
-            return None    
+            return None, debug    
         
 # ============================================================
 # Tracker Factory
