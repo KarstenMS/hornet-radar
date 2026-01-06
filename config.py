@@ -18,13 +18,8 @@ ROOT = "/home/hornet1/hornet-radar"
 MODEL_DIR = os.path.join(ROOT, "model/yolov5s-all-data.pt")
 YOLO_DIR = os.path.join(ROOT, "yolov5")
 
-FRAMES_DIR = os.path.join(ROOT, "detections/frames")     # For analysing single pictures
-LABELED_FRAMES_DIR = os.path.join(ROOT, "detections/labled-frames")    
-LABELED_FRAMES_THUMBS_DIR = os.path.join(LABELED_FRAMES_DIR, "thumbnails")  
-
-VIDEOS_DIR = os.path.join(ROOT, "detections/videos")     # For analysing videos
-LABELED_VIDEOS_DIR = os.path.join(ROOT, "detections/labled-videos")    
-LABELED_VIDEOS_THUMBS_DIR = os.path.join(LABELED_VIDEOS_DIR, "thumbnails")  
+FRAMES_DIR = os.path.join(ROOT, "detections", "frames")     # For analysing single pictures
+VIDEOS_DIR = os.path.join(ROOT, "detections", "videos")     # For analysing videos
 
 EVENTS_DIR = os.path.join(ROOT, "detections", "events")
 

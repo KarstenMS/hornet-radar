@@ -13,8 +13,7 @@ from pipeline_utils import save_and_upload_detection_frame
 from motion_gate import MotionGate
 from config import *
 from camera import Camera
-from event_storage import save_event
-
+from event_storage import save_event, upload_event
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--videos', default=False, action='store_true',
@@ -126,9 +125,10 @@ def camera_tracking(model, start_detection_id):
         if event:
             if event.confidence >= CONFIDENCE_THRESHOLD:
                 event_dir = save_event(event, frame)
-                #upload_event(event)
-                print(f"Event detected and saved: {event_dir}")
-
+                upload_event(event)
+                
+            if event_dir:
+                upload_event(event, event_dir)
 
         if SHOW_DEBUG_VIDEO:
             draw_debug_overlay(frame, debug, fps)

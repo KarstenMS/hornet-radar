@@ -44,9 +44,11 @@ class DetectionEvent:
         self.flight_angle: Optional[float] = None
         self.metadata: Dict = {}
 
-        # === Media URLs (filled later) ===
+        # === Media URLs & Dir ===
+        self.image_path = None
+        self.thumb_path= None
         self.image_url = None
-        self.thumb_url = None
+        self.thumb_url= None
 
     # --------------------------------------------------
     # Helpers
