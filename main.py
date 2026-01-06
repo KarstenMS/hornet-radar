@@ -128,7 +128,7 @@ def camera_tracking(model, start_detection_id):
                 upload_event(event)
                 
             if event_dir:
-                upload_event(event, event_dir)
+                upload_event(event)
 
         if SHOW_DEBUG_VIDEO:
             draw_debug_overlay(frame, debug, fps)
