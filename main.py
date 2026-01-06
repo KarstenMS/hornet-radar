@@ -125,7 +125,7 @@ def camera_tracking(model, start_detection_id):
 
         if event:
             if event.confidence >= CONFIDENCE_THRESHOLD:
-                event_dir = save_event(event)
+                event_dir = save_event(event, frame)
                 #upload_event(event)
                 print(f"Event detected and saved: {event_dir}")
 
