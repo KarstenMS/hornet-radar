@@ -131,10 +131,10 @@ def camera_tracking(model, start_detection_id):
 
         if SHOW_DEBUG_VIDEO:
             draw_debug_overlay(frame, debug, fps)
-            cv2.imshow("Hornet Debug", display)
+            cv2.imshow("Hornet Debug", frame)
             if cv2.waitKey(1) & 0xFF == 27:
                 break
-            
+
     cam.release()
     cv2.destroyAllWindows()
 
