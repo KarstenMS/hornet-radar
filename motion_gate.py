@@ -158,7 +158,7 @@ class MotionGate:
             self.tracking_state.reset()
 
     def _maybe_run_yolo(self, frame, debug):
-        
+
         if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
             return None
 

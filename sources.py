@@ -1,8 +1,7 @@
-from sources import FrameSource
+# sources.py
+from enum import Enum
 
-def get_frame_source_from_args(args) -> FrameSource:
-    if args.images:
-        return FrameSource.IMAGE
-    if args.videos:
-        return FrameSource.VIDEO
-    return FrameSource.CAMERA
+class FrameSource(str, Enum):
+    CAMERA = "camera"
+    VIDEO = "video"
+    IMAGE = "image"
