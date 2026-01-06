@@ -5,6 +5,7 @@ uploads results and thumbnails to Supabase.
 import argparse
 import os
 import cv2
+import time
 from detection import load_model, run_detection
 from storage import get_last_detection_id
 from helpers import ensure_directories, timestamp
@@ -102,8 +103,9 @@ def camera_tracking(model, start_detection_id):
 
     cam = Camera()
     motion_gate = MotionGate(model)
+    start_detection_id = start_detection_id
 
-    last_time = timestamp
+    last_time = time.time()
     fps = 0.0
 
     while True:
@@ -112,7 +114,7 @@ def camera_tracking(model, start_detection_id):
         if frame is None:
             break
 
-        now = timestamp
+        now = time.time()
         dt = now - last_time
         if dt > 0:
             fps = 1.0 / dt
