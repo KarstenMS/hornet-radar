@@ -31,7 +31,7 @@ class DetectionEvent:
         self.model_name: str = model_name
 
         # === Confidence ===
-        self.confidence: float = self._compute_confidence(detections)
+        self.confidence = max([d["confidence"] for d in detections], default=0.0)
 
         # === Tracking context ===
         self.tracking_bbox = tracking_bbox
@@ -44,28 +44,9 @@ class DetectionEvent:
         self.flight_angle: Optional[float] = None
         self.metadata: Dict = {}
 
-    # --------------------------------------------------
-    # Confidence handling
-    # --------------------------------------------------
-
-    def _compute_confidence(self, detections: List[Dict]) -> float:
-        """
-        Computes an overall confidence score for the event.
-
-        Strategy (v1):
-        - If multiple detections exist:
-          → take MAX confidence
-        """
-        if not detections:
-            return 0.0
-
-        confidences = [
-            d.get("confidence", 0.0)
-            for d in detections
-            if isinstance(d.get("confidence"), (int, float))
-        ]
-
-        return max(confidences) if confidences else 0.0
+        # === Media URLs (filled later) ===
+        self.image_url = None
+        self.thumb_url = None
 
     # --------------------------------------------------
     # Helpers
@@ -95,12 +76,14 @@ class DetectionEvent:
             "model": self.model_name,
             "detections": self.detections,
             "tracking_bbox": self.tracking_bbox,
-            "roi_bbox": self.roi_bbox,
             "tracking_frames": self.tracking_frames,
+            "roi_bbox": self.roi_bbox,
             "frame_shape": self.frame_shape,
             "trajectory": self.trajectory,
             "flight_angle": self.flight_angle,
             "metadata": self.metadata,
+            "image_url": self.image_url,
+            "thumb_url": self.thumb_url,
         }
 
     def __repr__(self) -> str:

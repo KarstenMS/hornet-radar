@@ -1,13 +1,126 @@
+# motion_gate.py
 import cv2
 import time
 
-from camera import Camera
 from config import *
 from detection import load_model, run_detection
 from tracking_state import TrackingState
 from event import DetectionEvent
 
+# ============================================================
+# Classes
+# ============================================================
 
+class MotionGate:
+    """
+    Handles motion detection, tracking and ROI-based YOLO detection.
+    Produces DetectionEvent objects.
+    """
+
+    def __init__(self, model):
+        self.model = model
+        self.tracking_state = TrackingState()
+
+        self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
+            history=MOTION_HISTORY,
+            varThreshold=MOTION_VAR_THRESHOLD,
+            detectShadows=False
+        )
+
+        self.kernel = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE,
+            (MOTION_KERNEL_SIZE, MOTION_KERNEL_SIZE)
+        )
+
+        self.frame_count = 0
+
+    def process_frame(self, frame):
+        """
+        Process one frame.
+        Returns DetectionEvent or None.
+        """
+
+        debug = {
+            "motion": False,
+            "tracking": self.tracking_state.active,
+            "frames": self.tracking_state.frames_tracked,
+            "yolo_done": self.tracking_state.detection_done,
+            "bbox": self.tracking_state.bbox
+        }
+
+        self.frame_count += 1
+        process_this_frame = (self.frame_count % FRAME_SKIP == 0)
+
+        motion_detected = False
+        motion_boxes = []
+
+        # ------------------------------------------------
+        # Motion Detection
+        # ------------------------------------------------
+
+        if process_this_frame:
+            fg_mask = self.bg_subtractor.apply(frame)
+            fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, self.kernel)
+
+            contours, _ = cv2.findContours(
+                fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
+
+            for c in contours:
+                if cv2.contourArea(c) < MOTION_MIN_AREA:
+                    continue
+
+                x, y, w, h = cv2.boundingRect(c)
+                motion_boxes.append((x, y, w, h))
+                motion_detected = True
+
+            if motion_detected and not self.tracking_state.active:
+                bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
+                tracker = create_tracker()
+                tracker.init(frame, bbox)
+                self.tracking_state.start(tracker, bbox)
+
+            if self.tracking_state.active:
+                ok, bbox = self.tracking_state.tracker.update(frame)
+                if ok:
+                    self.tracking_state.update(bbox)
+                else:
+                    self.tracking_state.reset()
+                    return None
+
+            if self.tracking_state.is_stable(TRACKING_STABLE_FRAMES) and not self.tracking_state.detection_done:
+
+                detections = run_yolo_on_roi(frame, self.tracking_state.bbox, self.model)
+
+                self.tracking_state.detection_done = True
+
+                if not detections:
+                    return None
+
+                event = DetectionEvent(
+                    pi_id=PI_ID,
+                    detections=detections,
+                    model_name="yolov5",
+                    tracking_bbox=self.tracking_state.bbox,
+                    roi_bbox=self.tracking_state.bbox,
+                    tracking_frames=self.tracking_state.frames_tracked,
+                    frame_shape=frame.shape[:2]
+                )
+
+                debug["motion"] = motion_detected
+                return event, debug
+
+
+            
+            
+            if self.tracking_state.is_timed_out(TRACKER_TIMEOUT):
+                self.tracking_state.reset()
+
+            return None
+
+
+        
+        
 # ============================================================
 # Tracker Factory
 # ============================================================
@@ -251,10 +364,4 @@ while True:
             break
 
 
-# ============================================================
-# Cleanup
-# ============================================================
 
-cam.release()
-cv2.destroyAllWindows()
-print("Motion-Gate beendet")

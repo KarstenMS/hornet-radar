@@ -7,10 +7,11 @@ import os
 import cv2
 from detection import load_model, run_detection
 from storage import get_last_detection_id
-from helpers import ensure_directories
+from helpers import ensure_directories, timestamp
 from pipeline_utils import save_and_upload_detection_frame
-from motion_gate import process_frame
+from motion_gate import MotionGate
 from config import *
+from camera import Camera
 
 
 parser = argparse.ArgumentParser()
@@ -99,16 +100,77 @@ def video_tracking(videos_dir, model, start_detection_id):
 
 def camera_tracking(model, start_detection_id):
 
-    event = motion_gate.process_frame(frame)
+    cam = Camera()
+    motion_gate = MotionGate(model)
 
-    if event:
-        if event.confidence >= CONFIDENCE_THRESHOLD:
-            save_event(event)
-            upload_event(event)
+    last_time = timestamp
+    fps = 0.0
+
+    while True:
+
+        frame = cam.read()
+        if frame is None:
+            break
+
+        now = time.time()
+        dt = now - last_time
+        if dt > 0:
+            fps = 1.0 / dt
+        last_time = now
+
+        event, debug = motion_gate.process_frame(frame)
+
+        if event:
+            if event.confidence >= CONFIDENCE_THRESHOLD:
+                save_event(event)
+                upload_event(event)
 
 
-       
+        if SHOW_DEBUG_VIDEO:
+            draw_debug_overlay(frame, debug, fps)
+            
+
+    cam.release()
+    cv2.destroyAllWindows()
+
+def draw_debug_overlay(frame, debug, fps):
+    y = 20
+    step = 22
+
+    cv2.putText(frame, f"FPS: {fps:.1f}", (10, y),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
+
+    y += step
+    cv2.putText(frame,
+                f"Motion: {'YES' if debug['motion'] else 'NO'}",
+                (10, y),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                (0,0,255) if debug['motion'] else (0,255,0), 2)
+
+    y += step
+    cv2.putText(frame,
+                f"Tracking: {'YES' if debug['tracking'] else 'NO'}",
+                (10, y),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                (0,255,255) if debug['tracking'] else (150,150,150), 2)
+
+    y += step
+    cv2.putText(frame,
+                f"Frames: {debug['frames']}",
+                (10, y),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
+
+    y += step
+    cv2.putText(frame,
+                f"YOLO done: {'YES' if debug['yolo_done'] else 'NO'}",
+                (10, y),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                (0,255,0) if debug['yolo_done'] else (0,0,255), 2)
+
+
 def main():
+
+    
     ensure_directories(FRAMES_DIR, LABELED_FRAMES_DIR, LABELED_FRAMES_THUMBS_DIR, VIDEOS_DIR, LABELED_VIDEOS_DIR, LABELED_VIDEOS_THUMBS_DIR)
     model = load_model()
     
