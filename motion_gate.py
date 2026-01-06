@@ -33,6 +33,7 @@ class MotionGate:
         self.frame_count = 0
 
     def process_frame(self, frame):
+    
         """
         Process one frame.
         Returns DetectionEvent or None.
@@ -121,8 +122,9 @@ class MotionGate:
             if self.tracking_state.is_timed_out(TRACKER_TIMEOUT):
                 self.tracking_state.reset()
 
-            return None, debug    
+            return None, debug
         
+        return event, debug  
 # ============================================================
 # Tracker Factory
 # ============================================================
