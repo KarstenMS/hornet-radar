@@ -181,7 +181,7 @@ class MotionGate:
             frame_shape=frame.shape[:2],
         )      
 
-    def create_tracker():
+    def _create_tracker():
 
         t = TRACKER_TYPE.upper()
 
