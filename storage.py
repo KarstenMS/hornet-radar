@@ -44,26 +44,3 @@ def upload_json_to_supabase(data):
         return response.status_code == 201
     else:
         print("Upload detection failed:", response.status_code, response.text)
-
-def get_last_detection_id(pi_id):
-    url = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"
-    params = {
-        "select": "detection_id",
-        "pi_id": f"eq.{pi_id}",
-        "order": "detection_id.desc",
-        "limit": 1
-    }
-
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}"
-    }
-
-    try:
-        r = requests.get(url, headers=headers, params=params, timeout=3)
-        if r.status_code == 200 and r.json():
-            return int(r.json()[0]["detection_id"])
-    except Exception:
-        pass
-
-    return 0

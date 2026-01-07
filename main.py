@@ -1,29 +1,48 @@
 """
-Main pipeline: iterates through images, runs detection,
-uploads results and thumbnails to Supabase.
+Main pipeline for Hornet Radar.
+
+Responsibilities:
+- Parse CLI arguments
+- Select input source (camera / video / image)
+- Feed frames into MotionGate
+- Handle DetectionEvents (save + upload)
+
+MotionGate is treated as a black box:
+frame → (event | None, debug)
 """
+
 import argparse
 import os
 import cv2
-import time
-from detection import load_model, run_detection
-from storage import get_last_detection_id
-from helpers import ensure_directories, timestamp
-from pipeline_utils import save_and_upload_detection_frame
-from motion_gate import MotionGate
+
 from config import *
+from detection import load_model
+from helpers import ensure_directories
 from camera import Camera
+from motion_gate import MotionGate
 from event_storage import save_event, upload_event
 from sources import FrameSource
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--videos', default=False, action='store_true',
-                    help="Analyses any .mp4 from detections/frames")
-parser.add_argument('-i', '--images', default=False, action='store_true',
-                    help="Analyses any .jpg from detections/frames")
+
+# ============================================================
+# Argument parsing
+# ============================================================
+
+parser = argparse.ArgumentParser(description="Hornet Radar main pipeline")
+
+parser.add_argument('-v', '--videos', default=False, action='store_true', help="Analyses any .mp4 from detections/frames")
+parser.add_argument('-i', '--images', default=False, action='store_true', help="Analyses any .jpg from detections/frames")
+
 args = parser.parse_args()
 
-def get_frame_source_from_args(args) -> FrameSource:
+def resolve_source() -> FrameSource:
+    """
+    Resolves input source based on CLI arguments.
+    Priority:
+    - images
+    - videos
+    - camera (default)
+    """
     if args.images:
         return FrameSource.IMAGE
     if args.videos:
@@ -31,183 +50,155 @@ def get_frame_source_from_args(args) -> FrameSource:
     return FrameSource.CAMERA
 
 
-def image_recognition(frames_dir, model, source):
-    
-    for image_name in os.listdir(frames_dir):
-        if not image_name.lower().endswith(".jpg"):
+# ============================================================
+# Image processing
+# ============================================================
+
+def process_images(motion_gate: MotionGate):
+    print("Processing images...")
+
+    for filename in os.listdir(IMAGES_DIR):
+        if not filename.lower().endswith(".jpg"):
             continue
 
-        image_path = os.path.join(frames_dir, image_name)
-        print(f"Processing {image_name} ...")
+        path = os.path.join(IMAGES_DIR, filename)
+        frame = cv2.imread(path)
 
-        frame = cv2.imread(image_path)
         if frame is None:
             continue
 
-        event, debug = run_detection(frame, source)
+        event, debug = motion_gate.process_frame(frame, FrameSource.IMAGE)
 
-        if event:
-            if event.confidence >= CONFIDENCE_THRESHOLD:
-                event_dir = save_event(event, frame)
-                
-            if event_dir:
-                upload_event(event)
+        if event and event.confidence >= CONFIDENCE_THRESHOLD:
+            save_event(event)
+            upload_event(event)
 
 
 
+# ============================================================
+# Video processing
+# ============================================================
 
-        # --- YOLO detection ---
-        predictions = run_detection(frame, model)
-        if not predictions:
-            continue
-        hornets = [p for p in predictions if p["class_id"] in (0, 1)]
+def process_videos(motion_gate: MotionGate):
+    print("Processing videos...")
 
-        # --- Skip if no hornets detected ---
-        if not (hornets):
-            print(f"No hornets detected in {image_name}, skipping upload.")
-            continue
-        
-        print(f'Positive hornet detections in {image_name}')
-        detection_id += 1
-        save_and_upload_detection_frame(img, hornets, detection_id)
-
-def video_tracking(videos_dir, model, start_detection_id):
-
-    detection_id = start_detection_id
-
-    for video_name in os.listdir(videos_dir):
-
-        image_name = ""
-        if not video_name.lower().endswith(".mp4"):
+    for filename in os.listdir(VIDEOS_DIR):
+        if not filename.lower().endswith(".mp4"):
             continue
 
-        video_path = os.path.join(videos_dir, video_name)
-        print(f"Processing video {video_name} ...")
+        path = os.path.join(VIDEOS_DIR, filename)
+        cap = cv2.VideoCapture(path)
 
-        cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
-            print(f"Could not open {video_name}.")
+            print(f"Could not open video: {filename}")
             continue
 
-        found = False
-        
+        print(f"Processing video: {filename}")
+
         while True:
             ret, frame = cap.read()
             if not ret:
-                print(f"Could not read {video_name}.") 
-                continue
+                break
 
-            predictions = run_detection(frame, model)
-            if not predictions:
-                continue           
+            event, debug = motion_gate.process_frame(frame, FrameSource.VIDEO)
 
-            hornets = [p for p in predictions if p["class_id"] in (0, 1)]
-            if not hornets:
-                continue      
-
-            detection_id += 1
-            found = True
-            save_and_upload_detection_frame(frame, hornets, detection_id)
-            
-           
-            break  # stop after first detection
+            if event and event.confidence >= CONFIDENCE_THRESHOLD:
+                save_event(event)
+                upload_event(event)
+                break  # stop after first confirmed event
 
         cap.release()
 
-        if not found:
-            print(f"No hornets detected in {video_name}.")
 
-def camera_tracking(model):
+# ============================================================
+# Camera processing (live)
+# ============================================================
+
+def process_camera(motion_gate: MotionGate):
+    print(f"Capturing from camera @ {CAMERA_FPS} FPS")
 
     cam = Camera()
-    motion_gate = MotionGate(model)
 
-    last_time = time.time()
-    fps = 0.0
+    try:
+        while True:
+            frame = cam.read()
+            if frame is None:
+                continue
 
-    while True:
+            # Picamera returns RGB → OpenCV expects BGR
+            if CAMERA_TYPE == "picamera2":
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-        frame = cam.read()
-        if frame is None:
-            break
+            event, debug = motion_gate.process_frame(frame, FrameSource.CAMERA)
 
-        now = time.time()
-        dt = now - last_time
-        if dt > 0:
-            fps = 1.0 / dt
-        last_time = now
-
-        event, debug = motion_gate.process_frame(frame)
-
-        if event:
-            if event.confidence >= CONFIDENCE_THRESHOLD:
-                event_dir = save_event(event, frame)
-                
-            if event_dir:
+            if event and event.confidence >= CONFIDENCE_THRESHOLD:
+                save_event(event)
                 upload_event(event)
 
-        if SHOW_DEBUG_VIDEO:
-            draw_debug_overlay(frame, debug, fps)
-            cv2.imshow("Hornet Debug", frame)
-            if cv2.waitKey(1) & 0xFF == 27:
-                break
+            # --- Optional debug window ---
+            if SHOW_DEBUG_VIDEO:
+                display = frame.copy()
+                draw_debug_overlay(display, debug)
+                cv2.imshow("Hornet Debug", display)
 
-    cam.release()
-    cv2.destroyAllWindows()
+                if cv2.waitKey(1) & 0xFF == 27: 
+                    break
 
-def draw_debug_overlay(frame, debug, fps):
+    finally:
+        cam.release()
+        cv2.destroyAllWindows()
+
+
+# ============================================================
+# Debug overlay
+# ============================================================
+
+def draw_debug_overlay(frame, debug: dict):
+    """
+    Renders debug information returned by MotionGate.
+    """
     y = 20
     step = 22
 
-    cv2.putText(frame, f"FPS: {fps:.1f}", (10, y),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
+    def line(text, color=(255, 255, 255)):
+        nonlocal y
+        cv2.putText(
+            frame, text, (10, y),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2
+        )
+        y += step
+    line(f"Press ESC to exit")
+    line(f"Source: {debug.get('source')}")
+    line(f"FPS: {debug.get('fps', 0):.1f}" if debug.get("fps") else "FPS: -")
+    line(f"Motion: {'YES' if debug.get('motion') else 'NO'}",
+         (0, 0, 255) if debug.get("motion") else (0, 255, 0))
+    line(f"Tracking: {'YES' if debug.get('tracking') else 'NO'}",
+         (0, 255, 255) if debug.get("tracking") else (150, 150, 150))
+    line(f"Frames tracked: {debug.get('frames_tracked', 0)}")
+    line(f"YOLO ran: {'YES' if debug.get('yolo_ran') else 'NO'}")
 
-    y += step
-    cv2.putText(frame,
-                f"Motion: {'YES' if debug['motion'] else 'NO'}",
-                (10, y),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                (0,0,255) if debug['motion'] else (0,255,0), 2)
 
-    y += step
-    cv2.putText(frame,
-                f"Tracking: {'YES' if debug['tracking'] else 'NO'}",
-                (10, y),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                (0,255,255) if debug['tracking'] else (150,150,150), 2)
-
-    y += step
-    cv2.putText(frame,
-                f"Frames: {debug['frames']}",
-                (10, y),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
-
-    y += step
-    cv2.putText(frame,
-                f"YOLO done: {'YES' if debug['yolo_done'] else 'NO'}",
-                (10, y),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                (0,255,0) if debug['yolo_done'] else (0,0,255), 2)
-
+# ============================================================
+# Main entry point
+# ============================================================
 
 def main():
 
     
-    ensure_directories(FRAMES_DIR, LABELED_FRAMES_DIR, LABELED_FRAMES_THUMBS_DIR, VIDEOS_DIR, LABELED_VIDEOS_DIR, LABELED_VIDEOS_THUMBS_DIR)
-    model = load_model()
-    source = get_frame_source_from_args(args)
+    ensure_directories(IMAGES_DIR, LABELED_IMAGES_DIR, LABELED_IMAGES_THUMBS_DIR, VIDEOS_DIR, LABELED_VIDEOS_DIR, LABELED_VIDEOS_THUMBS_DIR)
+    source = resolve_source()
+    motion_gate = MotionGate()
+
+    print(f"Input source: {source.value}")
 
     if source == FrameSource.IMAGE:
-        print(f"Reading {FRAMES_DIR} directory.") 
-        image_recognition(FRAMES_DIR, model, source)
+        process_images(motion_gate)
 
     elif source == FrameSource.VIDEO:
-        print(f"Reading {FRAMES_DIR} directory.") 
-        video_tracking(VIDEOS_DIR, model, source)
+        process_videos(motion_gate)
 
     else:
-        print(f"Capturing from camera with {CAMERA_FPS} FPS") 
-        camera_tracking(model, source)
+        process_camera(motion_gate)
 
        
 

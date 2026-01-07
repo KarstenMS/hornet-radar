@@ -52,33 +52,6 @@ class MotionGate:
         self.last_time = time.time()
         self.fps = 0.0
 
-    def process_frame(self, frame, source: FrameSource) -> Tuple[Optional[DetectionEvent], Dict]:
-
-        """
-        Process one frame.
-        Returns DetectionEvent or None.
-        """
-        debug = {
-            "source": source.value,
-            "motion": False,
-            "tracking": False,
-            "frames": 0,
-            "yolo_done": False,
-            "fps": None,
-        }
-
-        if source == FrameSource.IMAGE:
-            return self._process_image(frame, debug) 
-
-        if source == FrameSource.VIDEO:
-            return self._process_video(frame, debug)
-
-        if source == FrameSource.CAMERA:
-            return self._process_camera(frame, debug)
-     
-        raise ValueError(f"Unsupported FrameSource: {source}")        
-
-
     def _process_camera(self, frame, debug):
         # --- FPS ---
         now = time.time()
@@ -102,7 +75,7 @@ class MotionGate:
         return event, debug
 
     def _process_image(self, frame, debug):
-        debug["motion"] = True
+        debug["motion"] = False
         debug["tracking"] = False
 
         detections = run_detection(frame, self.model)
@@ -112,7 +85,7 @@ class MotionGate:
         event = DetectionEvent(
             pi_id=PI_ID,
             detections=detections,
-            model_name="yolo-image",
+            model_name=MODEL_NAME,
             frame_shape=frame.shape[:2],
         )
 
@@ -177,41 +150,43 @@ class MotionGate:
         return DetectionEvent(
             pi_id=PI_ID,
             detections=detections,
-            model_name="yolo-motion",
+            model_name=MODEL_NAME,
             tracking_bbox=self.tracking_state.bbox,
             tracking_frames=self.tracking_state.frames_tracked,
             frame_shape=frame.shape[:2],
         )      
 
+    def create_tracker():
+
+        t = TRACKER_TYPE.upper()
+
+        if t == "KCF" and hasattr(cv2, "TrackerKCF_create"):
+            print("Tracker: KCF")
+            return cv2.TrackerKCF_create()
+
+        if t == "CSRT" and hasattr(cv2, "TrackerCSRT_create"):
+            print("Tracker: CSRT")
+            return cv2.TrackerCSRT_create()
+
+        if t == "MOSSE" and hasattr(cv2, "TrackerMOSSE_create"):
+            print("Tracker: MOSSE")
+            return cv2.TrackerMOSSE_create()
+
+        if t == "AUTO":
+            if hasattr(cv2, "TrackerKCF_create"):
+                print("Tracker: AUTO → KCF")
+                return cv2.TrackerKCF_create()
+            if hasattr(cv2, "TrackerCSRT_create"):
+                print("Tracker: AUTO → CSRT")
+                return cv2.TrackerCSRT_create()
+
+        raise RuntimeError("No suitable OpenCV tracker available")
 
 # ============================================================
 # Tracking helpers
 # ============================================================
 
-def create_tracker():
-    t = TRACKER_TYPE.upper()
 
-    if t == "KCF" and hasattr(cv2, "TrackerKCF_create"):
-        print("Tracker: KCF")
-        return cv2.TrackerKCF_create()
-
-    if t == "CSRT" and hasattr(cv2, "TrackerCSRT_create"):
-        print("Tracker: CSRT")
-        return cv2.TrackerCSRT_create()
-
-    if t == "MOSSE" and hasattr(cv2, "TrackerMOSSE_create"):
-        print("Tracker: MOSSE")
-        return cv2.TrackerMOSSE_create()
-
-    if t == "AUTO":
-        if hasattr(cv2, "TrackerKCF_create"):
-            print("Tracker: AUTO → KCF")
-            return cv2.TrackerKCF_create()
-        if hasattr(cv2, "TrackerCSRT_create"):
-            print("Tracker: AUTO → CSRT")
-            return cv2.TrackerCSRT_create()
-
-    raise RuntimeError("No suitable OpenCV tracker available")
 
 def draw_tracking(frame, bbox):
     x, y, w, h = map(int, bbox)
@@ -279,3 +254,29 @@ def run_yolo_on_roi(frame, bbox, model):
         tracking_frames=self.tracking_state.frames_tracked,
         frame_shape=frame.shape[:2],
     )
+
+def process_frame(self, frame, source: FrameSource) -> Tuple[Optional[DetectionEvent], Dict]:
+
+    """
+    Process one frame.
+    Returns DetectionEvent or None.
+    """
+    debug = {
+        "source": source.value,
+        "motion": False,
+        "tracking": False,
+        "frames": 0,
+        "yolo_done": False,
+        "fps": None,
+    }
+
+    if source == FrameSource.IMAGE:
+        return self._process_image(frame, debug), debug
+
+    if source == FrameSource.VIDEO:
+        return self._process_video(frame, debug), debug
+
+    if source == FrameSource.CAMERA:
+        return self._process_camera(frame, debug), debug
+    
+    raise ValueError(f"Unsupported FrameSource: {source}")        

@@ -27,7 +27,6 @@ def count_species(predictions):
     eh_count = sum(1 for p in predictions if p["class_id"] == 0)
     return ah_count, eh_count
 
-
 def parse_predictions(predictions):
     parsed = []
     for p in predictions:
