@@ -19,6 +19,7 @@ def run_detection(image, model):
     """Run YOLO detection on a single image."""
     results = model(image)
     predictions = results.pred[0]
+
     return parse_predictions(predictions)
 
 def count_species(predictions):
