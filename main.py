@@ -70,7 +70,7 @@ def process_images(motion_gate: MotionGate):
         event, debug = motion_gate.process_frame(frame, FrameSource.IMAGE)
 
         if event and event.confidence >= CONFIDENCE_THRESHOLD:
-            save_event(event)
+            save_event(event, frame)
             upload_event(event)
 
 
@@ -103,7 +103,7 @@ def process_videos(motion_gate: MotionGate):
             event, debug = motion_gate.process_frame(frame, FrameSource.VIDEO)
 
             if event and event.confidence >= CONFIDENCE_THRESHOLD:
-                save_event(event)
+                save_event(event, frame)
                 upload_event(event)
                 break  # stop after first confirmed event
 
@@ -132,7 +132,7 @@ def process_camera(motion_gate: MotionGate):
             event, debug = motion_gate.process_frame(frame, FrameSource.CAMERA)
 
             if event and event.confidence >= CONFIDENCE_THRESHOLD:
-                save_event(event)
+                save_event(event, frame)
                 upload_event(event)
 
             # --- Optional debug window ---
