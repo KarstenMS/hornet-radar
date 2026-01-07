@@ -51,6 +51,32 @@ class MotionGate:
         self.last_time = time.time()
         self.fps = 0.0
 
+    def process_frame(self, frame, source: FrameSource) -> Tuple[Optional[DetectionEvent], Dict]:
+
+        """
+        Process one frame.
+        Returns DetectionEvent or None.
+        """
+        debug = {
+            "source": source.value,
+            "motion": False,
+            "tracking": False,
+            "frames": 0,
+            "yolo_done": False,
+            "fps": None,
+        }
+
+        if source == FrameSource.IMAGE:
+            return self._process_image(frame, debug), debug
+
+        if source == FrameSource.VIDEO:
+            return self._process_video(frame, debug), debug
+
+        if source == FrameSource.CAMERA:
+            return self._process_camera(frame, debug), debug
+        
+        raise ValueError(f"Unsupported FrameSource: {source}")    
+
     def _process_camera(self, frame, debug):
         # --- FPS ---
         now = time.time()
@@ -254,28 +280,4 @@ def run_yolo_on_roi(frame, bbox, model):
         frame_shape=frame.shape[:2],
     )
 
-def process_frame(self, frame, source: FrameSource) -> Tuple[Optional[DetectionEvent], Dict]:
-
-    """
-    Process one frame.
-    Returns DetectionEvent or None.
-    """
-    debug = {
-        "source": source.value,
-        "motion": False,
-        "tracking": False,
-        "frames": 0,
-        "yolo_done": False,
-        "fps": None,
-    }
-
-    if source == FrameSource.IMAGE:
-        return self._process_image(frame, debug), debug
-
-    if source == FrameSource.VIDEO:
-        return self._process_video(frame, debug), debug
-
-    if source == FrameSource.CAMERA:
-        return self._process_camera(frame, debug), debug
     
-    raise ValueError(f"Unsupported FrameSource: {source}")        
