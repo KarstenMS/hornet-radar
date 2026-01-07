@@ -32,7 +32,7 @@ def get_frame_source_from_args(args) -> FrameSource:
 
 
 def image_recognition(frames_dir, model, source):
-
+    print(frames_dir, model, source)
     
     for image_name in os.listdir(frames_dir):
         if not image_name.lower().endswith(".jpg"):

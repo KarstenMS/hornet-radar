@@ -68,7 +68,7 @@ class MotionGate:
         }
 
         if source == FrameSource.IMAGE:
-            return self._process_image(frame,)
+            return self._process_image(frame, debug) 
 
         if source == FrameSource.VIDEO:
             return self._process_video(frame, debug)
