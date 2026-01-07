@@ -95,13 +95,15 @@ class MotionGate:
     def _process_video(self, frame, debug):
         motion_boxes = self._update_motion(frame, debug)
         self._update_tracking(frame, motion_boxes, debug)
-
+ 
         event = self._maybe_run_yolo(frame, debug)
         return event, debug
 
     def _process_image(self, frame, debug):
         debug["motion"] = False
         debug["tracking"] = False
+        h, w = frame.shape[:2]
+        roi_bbox = (0, 0, w, h)
 
         detections = run_detection(frame, self.model)
         if not detections:
@@ -110,6 +112,9 @@ class MotionGate:
         event = DetectionEvent(
             pi_id=PI_ID,
             detections=detections,
+            tracking_bbox=None,
+            roi_bbox=roi_bbox,
+            tracking_frames=0,
             model_name=MODEL_NAME,
             frame_shape=frame.shape[:2],
         )

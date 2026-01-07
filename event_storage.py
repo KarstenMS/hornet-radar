@@ -74,7 +74,7 @@ def save_event(event, frame) -> Optional[str]:
 
         cv2.rectangle(labeled, (x1, y1), (x2, y2), (0, 0, 255), 2)
         cv2.putText(
-            frame,
+            labeled,
             f"{label} {conf}",
             (x1, max(y1 - 6, 10)),
             cv2.FONT_HERSHEY_SIMPLEX,
