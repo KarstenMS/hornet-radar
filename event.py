@@ -2,6 +2,7 @@
 import time
 import uuid
 from typing import List, Dict, Optional, Tuple
+from helpers import timestamp
 
 
 class DetectionEvent:
@@ -24,7 +25,7 @@ class DetectionEvent:
         # === Identity ===
         self.event_id: str = str(uuid.uuid4())
         self.pi_id: str = pi_id
-        self.timestamp: float = time.time()
+        self.timestamp: float = timestamp()
 
         # === Detection results ===
         self.detections: List[Dict] = detections

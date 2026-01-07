@@ -151,5 +151,5 @@ def upload_event(event: DetectionEvent) -> bool:
         "tracking_frames": event.tracking_frames,
         "model": event.model_name,
     }
-
+    print(f"Json: {data}")
     return upload_json_to_supabase(data)

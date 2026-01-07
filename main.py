@@ -70,6 +70,7 @@ def process_images(motion_gate: MotionGate):
         event, debug = motion_gate.process_frame(frame, FrameSource.IMAGE)
 
         if event and event.confidence >= CONFIDENCE_THRESHOLD:
+            print(event)
             save_event(event, frame)
             upload_event(event)
 
