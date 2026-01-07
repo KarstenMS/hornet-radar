@@ -5,7 +5,6 @@ from config import *
 from detection import load_model, run_detection
 from tracking_state import TrackingState
 from event import DetectionEvent
-from image_recognition import ImageRecognition
 from sources import FrameSource
 from typing import Tuple, Optional, Dict
 
