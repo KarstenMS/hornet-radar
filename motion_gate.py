@@ -67,13 +67,13 @@ class MotionGate:
         }
 
         if source == FrameSource.IMAGE:
-            return self._process_image(frame, debug), debug
+            return self._process_image(frame, debug)
 
         if source == FrameSource.VIDEO:
-            return self._process_video(frame, debug), debug
+            return self._process_video(frame, debug)
 
         if source == FrameSource.CAMERA:
-            return self._process_camera(frame, debug), debug
+            return self._process_camera(frame, debug)
         
         raise ValueError(f"Unsupported FrameSource: {source}")    
 
