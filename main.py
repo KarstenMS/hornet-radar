@@ -67,7 +67,8 @@ def process_images(motion_gate: MotionGate):
             continue
 
         event, debug = motion_gate.process_frame(frame, FrameSource.IMAGE)
-
+        print(f"Debug: {debug}")
+        
         if event and event.confidence >= CONFIDENCE_THRESHOLD:
             save_event(event, frame)
             upload_event(event)
@@ -100,6 +101,7 @@ def process_videos(motion_gate: MotionGate):
                 break
 
             event, debug = motion_gate.process_frame(frame, FrameSource.VIDEO)
+            print(f"Debug: {debug}")
 
             if event and event.confidence >= CONFIDENCE_THRESHOLD:
                 save_event(event, frame)
