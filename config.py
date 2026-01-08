@@ -59,4 +59,4 @@ PICAM_FORMAT = "RGB888"
 CONFIDENCE_THRESHOLD = 0.85 # Optional: confidence threshold for detections
 
 # --- Save event ---
-THUMB_SIZE = 252, 108           # Pixel-Size for thumbnails. Default: 192, 108 
+THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails. Default: 192, 108 
