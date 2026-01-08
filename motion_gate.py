@@ -178,10 +178,6 @@ class MotionGate:
         if not detections:
             return None
         
-        print("TRACKING BBOX:", self.tracking_state.bbox)
-        print("RAW DETECTION:", detections[0]["bbox"])
-        print("OFFSET:", offset)
-
         fixed_detections = []
         for d in detections:
             x1, y1, x2, y2 = d["bbox"]
@@ -194,9 +190,6 @@ class MotionGate:
                     y2 + offset[1],
                 )
             })
-
-        
-        print("FIXED DETECTION:", fixed_detections[0]["bbox"])
 
         self.tracking_state.detection_done = True
         debug["yolo_ran"] = True
