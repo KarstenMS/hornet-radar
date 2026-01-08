@@ -176,6 +176,17 @@ def draw_debug_overlay(frame, debug: dict):
     line(f"Frames tracked: {debug.get('frames_tracked', 0)}")
     line(f"YOLO ran: {'YES' if debug.get('yolo_ran') else 'NO'}")
 
+    bbox = debug.get("tracking_bbox")
+    if bbox:
+        x, y, w, h = map(int, bbox)
+        cv2.rectangle(
+            frame,
+            (x, y),
+            (x + w, y + h),
+            (0, 255, 255),
+            2
+        )
+
 
 # ============================================================
 # Main entry point

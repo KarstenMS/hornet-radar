@@ -158,6 +158,8 @@ class MotionGate:
             self.tracking_state.update(bbox)
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
+            debug["tracking_bbox"] = tuple(map(int, bbox))
+
         else:
             self.tracking_state.reset()
 
@@ -178,10 +180,10 @@ class MotionGate:
         if not detections:
             return None
         
-        fixed_detections = []
+        frame_detections = []
         for d in detections:
             x1, y1, x2, y2 = d["bbox"]
-            fixed_detections.append({
+            frame_detections.append({
                 **d,
                 "bbox": (
                     x1 + offset[0],
@@ -195,12 +197,9 @@ class MotionGate:
         debug["yolo_ran"] = True
 
 
-
-
-
         return DetectionEvent(
             pi_id=PI_ID,
-            detections=fixed_detections,
+            detections=frame_detections,
             model_name=MODEL_NAME,
             source=self.source,
             tracking_bbox=self.tracking_state.bbox,
@@ -234,7 +233,11 @@ class MotionGate:
 
         raise RuntimeError("No suitable OpenCV tracker available")
 
+# ============================================================
+# Tracking helpers
+# ============================================================
 
+   
 def extract_roi(frame, bbox):
     x, y, w, h = map(int, bbox)
     h_f, w_f = frame.shape[:2]
