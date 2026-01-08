@@ -192,16 +192,18 @@ class MotionGate:
                 )
             })
 
-        print("FIXED DETECTION:", fixed_detections[0]["bbox"])
+
+        if not detections:
+            return None
         
+        print("FIXED DETECTION:", fixed_detections[0]["bbox"])
+
         self.tracking_state.detection_done = True
         debug["yolo_ran"] = True
 
 
 
 
-        if not detections:
-            return None
 
         return DetectionEvent(
             pi_id=PI_ID,
