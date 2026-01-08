@@ -34,6 +34,7 @@ class MotionGate:
          # --- Tracking ---
         self.tracking_state = TrackingState()
         self.tracker = None
+        self.frame_count = 0
 
         # --- Motion detection ---
         self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
@@ -87,8 +88,18 @@ class MotionGate:
         self.last_time = now
         debug["fps"] = self.fps
 
-        motion_boxes = self._update_motion(frame, debug)
-        self._update_tracking(frame, motion_boxes, debug)
+        self.frame_count += 1
+        process_this_frame = (self.frame_count % FRAME_SKIP == 0)
+
+        if process_this_frame:
+            motion_boxes = self._update_motion(frame, debug)
+            self._update_tracking(frame, motion_boxes, debug)
+        else:
+            if self.tracking_state.active:
+                ok, bbox = self.tracking_state.tracker.update(frame)
+                if ok:
+                    self.tracking_state.update(bbox)
+                    debug["tracking"] = True
 
         event = self._maybe_run_yolo(frame, debug)
         return event, debug
