@@ -16,7 +16,6 @@ import os
 import cv2
 
 from config import *
-from detection import load_model
 from helpers import ensure_directories
 from camera import Camera
 from motion_gate import MotionGate
@@ -185,7 +184,7 @@ def draw_debug_overlay(frame, debug: dict):
 def main():
 
     
-    ensure_directories(IMAGES_DIR, LABELED_IMAGES_DIR, LABELED_IMAGES_THUMBS_DIR, VIDEOS_DIR, LABELED_VIDEOS_DIR, LABELED_VIDEOS_THUMBS_DIR)
+    ensure_directories(IMAGES_DIR, VIDEOS_DIR, EVENTS_DIR)
     source = resolve_source()
     motion_gate = MotionGate()
 
