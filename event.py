@@ -17,6 +17,7 @@ class DetectionEvent:
         detections: List[Dict],
         *,
         model_name: str,
+        source: str,
         tracking_bbox: Optional[Tuple[int, int, int, int]] = None,
         roi_bbox: Optional[Tuple[int, int, int, int]] = None,
         tracking_frames: int = 0,
@@ -26,6 +27,7 @@ class DetectionEvent:
         self.event_id: str = str(uuid.uuid4())
         self.pi_id: str = pi_id
         self.timestamp: float = timestamp()
+        self.source: str = source
 
         # === Detection results ===
         self.detections: List[Dict] = detections

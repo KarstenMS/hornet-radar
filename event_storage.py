@@ -150,6 +150,7 @@ def upload_event(event: DetectionEvent) -> bool:
         "roi_bbox": event.roi_bbox,
         "tracking_frames": event.tracking_frames,
         "model": event.model_name,
+        "source": event.source,
     }
 
     return upload_json_to_supabase(data)

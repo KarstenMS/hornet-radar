@@ -20,14 +20,8 @@ YOLO_DIR = os.path.join(ROOT, "yolov5")
 MODEL_NAME = "yolo5"
 
 IMAGES_DIR = os.path.join(ROOT, "detections", "images")     # For analysing single pictures
-LABELED_IMAGES_DIR = os.path.join(ROOT, "detections", "labled-images")                             #### SHould be removed later
-LABELED_IMAGES_THUMBS_DIR = os.path.join(LABELED_IMAGES_DIR, "thumbnails")                      #### SHould be removed later
-
-VIDEOS_DIR = os.path.join(ROOT, "detections","videos")     # For analysing videos
-LABELED_VIDEOS_DIR = os.path.join(ROOT, "detections", "labled-videos")                             #### SHould be removed later
-LABELED_VIDEOS_THUMBS_DIR = os.path.join(LABELED_VIDEOS_DIR, "thumbnails")                      #### Should be removed later
-
-EVENTS_DIR = os.path.join(ROOT, "detections", "events")
+VIDEOS_DIR = os.path.join(ROOT, "detections","videos")      # For analysing videos
+EVENTS_DIR = os.path.join(ROOT, "detections", "events")     # Directory for storing local events
 
 # --- Supabase ---
 SUPABASE_URL = "https://lebtnjdpjntaqheahjoi.supabase.co"
@@ -65,4 +59,4 @@ PICAM_FORMAT = "RGB888"
 CONFIDENCE_THRESHOLD = 0.85 # Optional: confidence threshold for detections
 
 # --- Save event ---
-THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails 
+THUMB_SIZE = 252, 108           # Pixel-Size for thumbnails. Default: 192, 108 

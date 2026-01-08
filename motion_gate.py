@@ -67,17 +67,18 @@ class MotionGate:
         }
 
         if source == FrameSource.IMAGE:
-            return self._process_image(frame, debug)
+            return self._process_image(frame, debug, source)
 
         if source == FrameSource.VIDEO:
-            return self._process_video(frame, debug)
+            return self._process_video(frame, debug, source)
 
         if source == FrameSource.CAMERA:
-            return self._process_camera(frame, debug)
+            return self._process_camera(frame, debug, source)
         
         raise ValueError(f"Unsupported FrameSource: {source}")    
 
     def _process_camera(self, frame, debug):
+        self.source = "Camera"
         # --- FPS ---
         now = time.time()
         dt = now - self.last_time
@@ -93,6 +94,7 @@ class MotionGate:
         return event, debug
 
     def _process_video(self, frame, debug):
+        self.source = "Video"
         motion_boxes = self._update_motion(frame, debug)
         self._update_tracking(frame, motion_boxes, debug)
  
@@ -100,6 +102,7 @@ class MotionGate:
         return event, debug
 
     def _process_image(self, frame, debug):
+        self.source = "Image"
         debug["motion"] = False
         debug["tracking"] = False
         h, w = frame.shape[:2]
