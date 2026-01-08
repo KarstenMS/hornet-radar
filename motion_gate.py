@@ -173,7 +173,10 @@ class MotionGate:
             return None
 
         roi, offset = extract_roi(frame, self.tracking_state.bbox)
-        detections = run_detection(roi, self.model)
+        detections = run_detection(roi, self.model)    
+
+        if not detections:
+            return None
         
         print("TRACKING BBOX:", self.tracking_state.bbox)
         print("RAW DETECTION:", detections[0]["bbox"])
@@ -192,9 +195,6 @@ class MotionGate:
                 )
             })
 
-
-        if not detections:
-            return None
         
         print("FIXED DETECTION:", fixed_detections[0]["bbox"])
 
