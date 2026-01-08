@@ -172,18 +172,40 @@ class MotionGate:
         if self.tracking_state.detection_done:
             return None
 
-        roi, _ = extract_roi(frame, self.tracking_state.bbox)
+        roi, offset = extract_roi(frame, self.tracking_state.bbox)
         detections = run_detection(roi, self.model)
+        
+        print("TRACKING BBOX:", self.tracking_state.bbox)
+        print("RAW DETECTION:", detections[0]["bbox"])
+        print("OFFSET:", offset)
 
+        fixed_detections = []
+        for d in detections:
+            x1, y1, x2, y2 = d["bbox"]
+            fixed_detections.append({
+                **d,
+                "bbox": (
+                    x1 + offset[0],
+                    y1 + offset[1],
+                    x2 + offset[0],
+                    y2 + offset[1],
+                )
+            })
+
+        print("FIXED DETECTION:", fixed_detections[0]["bbox"])
+        
         self.tracking_state.detection_done = True
         debug["yolo_ran"] = True
+
+
+
 
         if not detections:
             return None
 
         return DetectionEvent(
             pi_id=PI_ID,
-            detections=detections,
+            detections=fixed_detections,
             model_name=MODEL_NAME,
             source=self.source,
             tracking_bbox=self.tracking_state.bbox,
