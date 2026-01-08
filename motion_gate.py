@@ -174,7 +174,7 @@ class MotionGate:
         if self.tracking_state.detection_done:
             return None
 
-        roi, offset = extract_roi(frame, self.tracking_state.bbox)
+        roi, offset = self._extract_roi(frame, self.tracking_state.bbox)
         detections = run_detection(roi, self.model)    
 
         if not detections:
@@ -232,20 +232,16 @@ class MotionGate:
                 return cv2.TrackerCSRT_create()
 
         raise RuntimeError("No suitable OpenCV tracker available")
+    
+    def _extract_roi(self, frame, bbox):
+        x, y, w, h = map(int, bbox)
+        h_f, w_f = frame.shape[:2]
 
-# ============================================================
-# Tracking helpers
-# ============================================================
+        x = max(0, x)
+        y = max(0, y)
+        w = min(w, w_f - x)
+        h = min(h, h_f - y)
+        roi = frame[y:y + h, x:x + w]
 
-   
-def extract_roi(frame, bbox):
-    x, y, w, h = map(int, bbox)
-    h_f, w_f = frame.shape[:2]
+        return roi, (x, y)
 
-    x = max(0, x)
-    y = max(0, y)
-    w = min(w, w_f - x)
-    h = min(h, h_f - y)
-    roi = frame[y:y + h, x:x + w]
-
-    return roi, (x, y)
