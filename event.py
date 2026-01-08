@@ -1,5 +1,4 @@
 # event.py
-import time
 import uuid
 from typing import List, Dict, Optional, Tuple
 from helpers import timestamp
@@ -87,8 +86,10 @@ class DetectionEvent:
             "trajectory": self.trajectory,
             "flight_angle": self.flight_angle,
             "metadata": self.metadata,
+            "source": self.source,
             "image_url": self.image_url,
             "thumb_url": self.thumb_url,
+
         }
 
     def __repr__(self) -> str:
