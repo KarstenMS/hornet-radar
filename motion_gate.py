@@ -119,6 +119,7 @@ class MotionGate:
             roi_bbox=roi_bbox,
             tracking_frames=0,
             model_name=MODEL_NAME,
+            source=self.source,
             frame_shape=frame.shape[:2],
         )
 
@@ -184,6 +185,7 @@ class MotionGate:
             pi_id=PI_ID,
             detections=detections,
             model_name=MODEL_NAME,
+            source=self.source,
             tracking_bbox=self.tracking_state.bbox,
             tracking_frames=self.tracking_state.frames_tracked,
             frame_shape=frame.shape[:2],
