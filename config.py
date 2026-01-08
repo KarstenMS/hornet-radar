@@ -62,7 +62,7 @@ WEBCAM_INDEX = 0
 PICAM_FORMAT = "RGB888"
 
 # --- Detection Settings ---
-CONFIDENCE_THRESHOLD = 0.8 # Optional: confidence threshold for detections
+CONFIDENCE_THRESHOLD = 0.85 # Optional: confidence threshold for detections
 
 # --- Save event ---
 THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails 
