@@ -100,6 +100,8 @@ def process_videos(motion_gate: MotionGate):
             if not ret:
                 break
 
+            
+
             event, debug = motion_gate.process_frame(frame, FrameSource.VIDEO)
             print(f"Debug: {debug}")
 

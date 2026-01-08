@@ -106,11 +106,17 @@ class MotionGate:
 
     def _process_video(self, frame, debug):
         self.source = "Video"
-        motion_boxes = self._update_motion(frame, debug)
-        self._update_tracking(frame, motion_boxes, debug)
- 
+
+        self.frame_count += 1
+        process_this_frame = (self.frame_count % FRAME_SKIP == 0)
+
+        if process_this_frame:
+            motion_boxes = self._update_motion(frame, debug)
+            self._update_tracking(frame, motion_boxes, debug)
+
         event = self._maybe_run_yolo(frame, debug)
         return event, debug
+        
 
     def _process_image(self, frame, debug):
         self.source = "Image"
