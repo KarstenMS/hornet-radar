@@ -224,7 +224,8 @@ class MotionGate:
 
 
 def draw_tracking(frame, bbox):
-
+    print("FRAME SHAPE:", frame.shape)
+    print("BBOX:", bbox)
 
     x, y, w, h = map(int, bbox)
     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
@@ -241,22 +242,19 @@ def extract_roi(frame, bbox):
     y = max(0, y)
     w = min(w, w_f - x)
     h = min(h, h_f - y)
-
     roi = frame[y:y + h, x:x + w]
+
     return roi, (x, y)
 
 def run_yolo_on_roi(frame, bbox, model):
     roi, offset = extract_roi(frame, bbox)
     if roi.size == 0:
         return []
-
+    print("ROI SHAPE:", roi.shape, "OFFSET:", offset)
     predictions = run_detection(roi, model)
 
     detections = []
     for p in predictions:
-        print("FRAME SHAPE:", frame.shape)
-        print("BBOX:", bbox)
-        
         x1, y1, x2, y2 = p["bbox"]
         detections.append({
             "class_id": p["class_id"],
