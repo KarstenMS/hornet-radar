@@ -185,6 +185,7 @@ class MotionGate:
             self.tracking_state.reset()
 
         if self.tracking_state.is_timed_out(TRACKER_TIMEOUT):
+            print("Tracker timeout")
             self.tracking_state.reset()
 
     def _maybe_run_yolo(self, frame, debug):
