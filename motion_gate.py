@@ -228,7 +228,7 @@ class MotionGate:
  
         approach_vec = vector_from_points(centers[:TRACKING_STABLE_FRAMES])
         departure_vec = vector_from_points(centers[-TRACKING_STABLE_FRAMES:])
-
+        
         if approach_vec is None or departure_vec is None:
             return None
         approach_vec = invert(approach_vec)
@@ -249,6 +249,7 @@ class MotionGate:
             frame_shape=frame.shape[:2],
             approach_vec=approach_vec,
             departure_vec=departure_vec,
+            dwell_time=self.dwell_time,
         )      
 
         
