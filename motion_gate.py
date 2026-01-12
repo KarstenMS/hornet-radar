@@ -95,6 +95,8 @@ class MotionGate:
         if process_this_frame:
             motion_boxes = self._update_motion(frame, debug)
             event = self._update_tracking(frame, motion_boxes, debug)
+            if event:
+                return event, debug
         else:
             if self.tracking_state.active:
                 ok, bbox = self.tracking_state.tracker.update(frame)
@@ -103,9 +105,8 @@ class MotionGate:
                     debug["tracking"] = True
 
         self._maybe_run_yolo(frame, debug)
-        if event:
-            return event, debug
-        return None, debug
+
+        return event, debug
 
     def _process_video(self, frame, debug):
         self.source = "Video"
