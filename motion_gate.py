@@ -228,6 +228,7 @@ class MotionGate:
  
         approach_vec = vector_from_points(centers[:TRACKING_STABLE_FRAMES])
         departure_vec = vector_from_points(centers[-TRACKING_STABLE_FRAMES:])
+        dwell_time = self.tracking_state.dwell_time
         
         if approach_vec is None or departure_vec is None:
             return None
@@ -238,7 +239,7 @@ class MotionGate:
         print (f"Approach deg: {vec_to_deg(approach_vec)}, Departure deg: {vec_to_deg(departure_vec)}")
 
         self.tracking_state.detection_done = True
-
+        print("Dwell time:", self.tracking_state.dwell_time)
         return DetectionEvent(
             pi_id=PI_ID,
             detections=frame_detections,
@@ -249,7 +250,7 @@ class MotionGate:
             frame_shape=frame.shape[:2],
             approach_vec=approach_vec,
             departure_vec=departure_vec,
-            dwell_time=self.dwell_time,
+            dwell_time=dwell_time,
         )      
 
         
