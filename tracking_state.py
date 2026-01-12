@@ -23,7 +23,7 @@ class TrackingState:
     # =====================
     # Lifecycle
     # =====================
-    def start(self, tracker, bbox):
+    def start(self, tracker, bbox, frame_shape):
         self.tracker = tracker
         self.bbox = bbox
         self.active = True
