@@ -7,8 +7,8 @@ from tracking_state import TrackingState
 from event import DetectionEvent
 from sources import FrameSource
 from typing import Tuple, Optional, Dict
-from motion_vectors import vector_from_points, invert
-from helpers import vec_to_deg
+from motion_vectors import vector_from_points
+from helpers import vec_to_deg, invert
 
 # ============================================================
 # Classes
