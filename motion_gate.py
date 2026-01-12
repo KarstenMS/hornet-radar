@@ -228,6 +228,7 @@ class MotionGate:
             return None
 
         centers = self.tracking_state.centers
+        print("Centers:", centers)
         approach_vec = vector_from_points(centers[:TRACKING_STABLE_FRAMES])
         departure_vec = vector_from_points(centers[-TRACKING_STABLE_FRAMES:])
         if approach_vec is None or departure_vec is None:
