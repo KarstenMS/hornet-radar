@@ -223,23 +223,22 @@ class MotionGate:
    
         # --- Compute movement vectors ---
         centers = self.tracking_state.centers
-        print("Centers:", len(centers), "Tracking frames:", TRACKING_STABLE_FRAMES + 1)
         if len(centers) < TRACKING_STABLE_FRAMES + 1:
             return None
  
         approach_vec = vector_from_points(centers[:TRACKING_STABLE_FRAMES])
         departure_vec = vector_from_points(centers[-TRACKING_STABLE_FRAMES:])
 
-        print(f"Approach vector: {approach_vec}, Departure vector: {departure_vec}")
         if approach_vec is None or departure_vec is None:
             return None
         approach_vec = invert(approach_vec)
 
         print(f"Hornet detected!")
         print(f"Approach vector: {approach_vec}, Departure vector: {departure_vec}")
+        print (f"Approach deg: {vec_to_deg(approach_vec)}, Departure deg: {vec_to_deg(departure_vec)}")
 
         self.tracking_state.detection_done = True
-        
+
         return DetectionEvent(
             pi_id=PI_ID,
             detections=frame_detections,
