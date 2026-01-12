@@ -106,6 +106,7 @@ class MotionGate:
                     debug["tracking"] = True
 
         self._maybe_run_yolo(frame, debug)
+        return event, debug
 
 
     def _process_video(self, frame, debug):
