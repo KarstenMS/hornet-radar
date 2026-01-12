@@ -1,7 +1,8 @@
 # event.py
 import uuid
+import time
 from typing import List, Dict, Optional, Tuple
-from helpers import timestamp
+
 
 
 class DetectionEvent:
@@ -22,12 +23,13 @@ class DetectionEvent:
         tracking_frames: int = 0,
         frame_shape: Optional[Tuple[int, int]] = None,
         approach_vec: Optional[Tuple[int, int]] = None,
-        departure_vec: Optional[Tuple[int, int]] = None
+        departure_vec: Optional[Tuple[int, int]] = None,
+        dwell_time: Optional[float] = None,
     ):
         # === Identity ===
         self.event_id: str = str(uuid.uuid4())
         self.pi_id: str = pi_id
-        self.timestamp: float = timestamp()
+        self.timestamp: float = time.time()
         self.source: str = source
 
         # === Detection results ===
@@ -47,6 +49,7 @@ class DetectionEvent:
         self.trajectory: List[Tuple[int, int]] = []
         self.approach_vec = approach_vec
         self.departure_vec = departure_vec
+        self.dwell_time = dwell_time
         self.metadata: Dict = {}
 
         # === Media URLs & Dir ===
@@ -89,6 +92,7 @@ class DetectionEvent:
             "trajectory": self.trajectory,
             "approach_vec": self.approach_vec,
             "departure_vec": self.departure_vec,
+            "dwell_time": self.dwell_time,
             "metadata": self.metadata,
             "source": self.source,
             "image_url": self.image_url,

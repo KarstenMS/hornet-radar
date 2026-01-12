@@ -17,8 +17,8 @@ class TrackingState:
         self.detection_done: bool = False
 
         # --- Timing ---
-        self.start_time: float = 0.0
-        self.last_update: float = 0.0
+        self.start_frame_ts = None
+        self.end_frame_ts = None
 
     # =====================
     # Lifecycle
@@ -30,19 +30,21 @@ class TrackingState:
         self.frames_tracked = 0
         self.detection_done = False
         self.centers = []
+        self.start_frame_ts = time.time()
+        self.end_frame_ts = time.time()
+        self.last_update = time.time()
 
-        now = time.time()
-        self.start_time = now
-        self.last_update = now
 
     def update(self, bbox):
         self.bbox = bbox
         self.frames_tracked += 1
-        self.last_update = time.time()
         x, y, w, h = bbox
         cx = x + w / 2
         cy = y + h / 2
         self.centers.append((cx, cy))
+        self.end_frame_ts = time.time()
+        self.dwell_time = self.end_frame_ts - self.start_frame_ts
+        self.last_update = time.time()
 
     def reset(self):
         self.active = False
@@ -50,8 +52,8 @@ class TrackingState:
         self.bbox = None
         self.frames_tracked = 0
         self.detection_done = False
-        self.start_time = 0.0
-        self.last_update = 0.0
+        self.start_frame_ts = None
+        self.end_frame_ts = None
         self.centers = []
 
     # =====================

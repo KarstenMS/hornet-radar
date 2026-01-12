@@ -168,6 +168,7 @@ class MotionGate:
             self.tracker.init(frame, bbox)
             self.tracking_state.start(self.tracker, bbox)
 
+
         if not self.tracking_state.active:
             return
 
@@ -177,6 +178,8 @@ class MotionGate:
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
             debug["tracking_bbox"] = tuple(map(int, bbox))
+
+            print(f"Tracking started")
 
         else:
             self.tracking_state.reset()
@@ -194,6 +197,9 @@ class MotionGate:
 
         roi, offset = self._extract_roi(frame, self.tracking_state.bbox)
         detections = run_detection(roi, self.model)    
+
+        print(f"Yolo detection run")
+
 
         if not detections:
             return None
@@ -213,6 +219,7 @@ class MotionGate:
 
         self.tracking_state.detection_done = True
         debug["yolo_ran"] = True
+        print(f"Hornet found!")
 
         # --- Compute movement vectors ---
         centers = self.tracking_state.centers
