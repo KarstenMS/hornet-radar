@@ -239,6 +239,7 @@ class MotionGate:
         return None
 
     def _finalize_event(self) -> DetectionEvent:
+        print("Finalize Event")
         # --- Compute movement vectors ---
         centers = self.tracking_state.centers
 
