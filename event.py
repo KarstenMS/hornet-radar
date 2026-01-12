@@ -21,6 +21,8 @@ class DetectionEvent:
         roi_bbox: Optional[Tuple[int, int, int, int]] = None,
         tracking_frames: int = 0,
         frame_shape: Optional[Tuple[int, int]] = None,
+        approach_vec: Optional[Tuple[int, int]] = None,
+        departure_vec: Optional[Tuple[int, int]] = None
     ):
         # === Identity ===
         self.event_id: str = str(uuid.uuid4())
