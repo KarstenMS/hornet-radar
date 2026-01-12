@@ -183,6 +183,7 @@ class MotionGate:
 
         else:
             self.tracking_state.reset()
+            print("Tracker reset")
 
         if self.tracking_state.is_timed_out(TRACKER_TIMEOUT):
             print("Tracker timeout")
