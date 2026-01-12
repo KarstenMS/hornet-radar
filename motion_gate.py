@@ -219,7 +219,6 @@ class MotionGate:
                 )
             })
 
-        self.tracking_state.detection_done = True
         debug["yolo_ran"] = True
    
         # --- Compute movement vectors ---
@@ -228,9 +227,10 @@ class MotionGate:
         if len(centers) < TRACKING_STABLE_FRAMES + 1:
             return None
  
-        
         approach_vec = vector_from_points(centers[:TRACKING_STABLE_FRAMES])
         departure_vec = vector_from_points(centers[-TRACKING_STABLE_FRAMES:])
+
+        print(f"Approach vector: {approach_vec}, Departure vector: {departure_vec}")
         if approach_vec is None or departure_vec is None:
             return None
         approach_vec = invert(approach_vec)
@@ -238,7 +238,8 @@ class MotionGate:
         print(f"Hornet detected!")
         print(f"Approach vector: {approach_vec}, Departure vector: {departure_vec}")
 
-
+        self.tracking_state.detection_done = True
+        
         return DetectionEvent(
             pi_id=PI_ID,
             detections=frame_detections,
@@ -250,6 +251,8 @@ class MotionGate:
             approach_vec=approach_vec,
             departure_vec=departure_vec,
         )      
+
+        
 
     def _create_tracker(self):
 
