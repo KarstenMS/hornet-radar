@@ -224,7 +224,7 @@ class MotionGate:
    
         # --- Compute movement vectors ---
         centers = self.tracking_state.centers
-        print("Centers:", centers)
+        print("Centers:", len(centers), "Tracking frames:", TRACKING_STABLE_FRAMES + 1)
         if len(centers) < TRACKING_STABLE_FRAMES + 1:
             return None
  
