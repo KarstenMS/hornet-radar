@@ -145,6 +145,7 @@ class MotionGate:
         return event, debug
 
     def _update_motion(self, frame, debug):
+        print("Update Motion run")
         fg = self.bg_subtractor.apply(frame)
         fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, self.kernel)
 
@@ -162,6 +163,7 @@ class MotionGate:
         return boxes
 
     def _update_tracking(self, frame, motion_boxes, debug):
+        print("Update Tracking run")
         if motion_boxes and not self.tracking_state.active:
             bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
             self.tracker = self._create_tracker()
@@ -186,6 +188,7 @@ class MotionGate:
             self.tracking_state.reset()
 
     def _maybe_run_yolo(self, frame, debug):
+        print(f"Maybe Run Yolo")
 
         if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
             return None
@@ -198,7 +201,7 @@ class MotionGate:
             return
         else:
             detections = run_detection(roi, self.model)    
-            print(f"Yolo detection run")
+            print(f"Yolo detection done")
 
 
         if not detections:
@@ -239,7 +242,7 @@ class MotionGate:
         print (f"Approach deg: {vec_to_deg(approach_vec)}, Departure deg: {vec_to_deg(departure_vec)}")
 
         self.tracking_state.detection_done = True
-        print("Dwell time:", self.tracking_state.dwell_time)
+
         return DetectionEvent(
             pi_id=PI_ID,
             detections=frame_detections,
