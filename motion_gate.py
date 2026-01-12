@@ -7,7 +7,7 @@ from tracking_state import TrackingState
 from event import DetectionEvent
 from sources import FrameSource
 from typing import Tuple, Optional, Dict
-from motion_vectors import vector_from_points
+from motion_vectors import vector_from_points, invert
 from helpers import vec_to_deg
 
 # ============================================================
@@ -216,8 +216,7 @@ class MotionGate:
 
         # --- Compute movement vectors ---
         centers = self.tracking_state.centers
-
-        approach_vec = vector_from_points(centers[:TRACKING_STABLE_FRAMES])
+        approach_vec = invert(vector_from_points(centers[:TRACKING_STABLE_FRAMES]))
         departure_vec = vector_from_points(centers[-TRACKING_STABLE_FRAMES:])
         print(f"Approach vector: {vec_to_deg(approach_vec)}, Departure vector: {vec_to_deg(departure_vec)}")
 
