@@ -182,9 +182,14 @@ class MotionGate:
             debug["tracking_bbox"] = tuple(map(int, bbox))
 
         else:
-            self.tracking_state.reset()
             print("Tracker reset")
+            if self.tracking_state.confirmed:
+                event = self._finalize_event()
+                self.tracking_state.reset()
+                return event
 
+            self.tracking_state.reset()
+ 
         if self.tracking_state.is_timed_out(TRACKER_TIMEOUT):
             print("Tracker timeout")
             self.tracking_state.reset()
@@ -226,39 +231,41 @@ class MotionGate:
 
         debug["yolo_ran"] = True
    
+        print(f"Hornet detected!")
+
+        self.tracking_state.confirmed = True
+        self.tracking_state.first_detection_frame = self.tracking_state.frames_tracked
+        self.tracking_state.detections = frame_detections
+        return None
+
+    def _finalize_event(self) -> DetectionEvent:
         # --- Compute movement vectors ---
         centers = self.tracking_state.centers
-        if len(centers) < TRACKING_STABLE_FRAMES + 1:
-            return None
- 
-        approach_vec = vector_from_points(centers[:TRACKING_STABLE_FRAMES])
-        departure_vec = vector_from_points(centers[-TRACKING_STABLE_FRAMES:])
+
+        approach_vec = vector_from_points(
+            centers[:TRACKING_STABLE_FRAMES]
+        )
+        departure_vec = vector_from_points(
+            centers[-TRACKING_STABLE_FRAMES:]
+        )
+
+        if approach_vec:
+            approach_vec = invert(approach_vec)
+
         dwell_time = self.tracking_state.dwell_time
-        
-        if approach_vec is None or departure_vec is None:
-            return None
-        approach_vec = invert(approach_vec)
-
-        print(f"Hornet detected!")
-        print(f"Approach vector: {approach_vec}, Departure vector: {departure_vec}")
-        print (f"Approach deg: {vec_to_deg(approach_vec)}, Departure deg: {vec_to_deg(departure_vec)}")
-
-        self.tracking_state.detection_done = True
 
         return DetectionEvent(
             pi_id=PI_ID,
-            detections=frame_detections,
+            detections=self.tracking_state.detections,
             model_name=MODEL_NAME,
             source=self.source,
             tracking_bbox=self.tracking_state.bbox,
             tracking_frames=self.tracking_state.frames_tracked,
-            frame_shape=frame.shape[:2],
+            frame_shape=self.tracking_state.frame_shape,
             approach_vec=approach_vec,
             departure_vec=departure_vec,
             dwell_time=dwell_time,
-        )      
-
-        
+        )
 
     def _create_tracker(self):
 

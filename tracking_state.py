@@ -30,6 +30,9 @@ class TrackingState:
         self.frames_tracked = 0
         self.detection_done = False
         self.centers = []
+        self.confirmed = False      # YOLO hat Objekt bestätigt
+        self.first_detection_frame = None
+        self.last_update_time = None
         self.start_frame_ts = time.time()
         self.end_frame_ts = time.time()
         self.last_update = time.time()
