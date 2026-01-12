@@ -7,7 +7,8 @@ from tracking_state import TrackingState
 from event import DetectionEvent
 from sources import FrameSource
 from typing import Tuple, Optional, Dict
-
+from motion_vectors import vector_from_points
+from helpers import vec_to_deg
 
 # ============================================================
 # Classes
@@ -213,6 +214,13 @@ class MotionGate:
         self.tracking_state.detection_done = True
         debug["yolo_ran"] = True
 
+        # --- Compute movement vectors ---
+        centers = self.tracking_state.centers
+
+        approach_vec = vector_from_points(centers[:TRACKING_STABLE_FRAMES])
+        departure_vec = vector_from_points(centers[-TRACKING_STABLE_FRAMES:])
+        print(f"Approach vector: {vec_to_deg(approach_vec)}, Departure vector: {vec_to_deg(departure_vec)}")
+
 
         return DetectionEvent(
             pi_id=PI_ID,
@@ -222,6 +230,8 @@ class MotionGate:
             tracking_bbox=self.tracking_state.bbox,
             tracking_frames=self.tracking_state.frames_tracked,
             frame_shape=frame.shape[:2],
+            approach_vec=approach_vec,
+            departure_vec=departure_vec,
         )      
 
     def _create_tracker(self):

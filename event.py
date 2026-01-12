@@ -43,7 +43,8 @@ class DetectionEvent:
 
         # === Future extensions ===
         self.trajectory: List[Tuple[int, int]] = []
-        self.flight_angle: Optional[float] = None
+        self.approach_vec = approach_vec
+        self.departure_vec = departure_vec
         self.metadata: Dict = {}
 
         # === Media URLs & Dir ===
@@ -84,7 +85,8 @@ class DetectionEvent:
             "roi_bbox": self.roi_bbox,
             "frame_shape": self.frame_shape,
             "trajectory": self.trajectory,
-            "flight_angle": self.flight_angle,
+            "approach_vec": self.approach_vec,
+            "departure_vec": self.departure_vec,
             "metadata": self.metadata,
             "source": self.source,
             "image_url": self.image_url,

@@ -151,6 +151,8 @@ def upload_event(event: DetectionEvent) -> bool:
         "tracking_frames": event.tracking_frames,
         "model": event.model_name,
         "source": event.source,
+        "approach_vec": event.approach_vec,
+        "departure_vec": event.departure_vec,
     }
 
     return upload_json_to_supabase(data)

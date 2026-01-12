@@ -27,9 +27,9 @@ class TrackingState:
         self.tracker = tracker
         self.bbox = bbox
         self.active = True
-
         self.frames_tracked = 0
         self.detection_done = False
+        self.centers = []
 
         now = time.time()
         self.start_time = now
@@ -39,6 +39,10 @@ class TrackingState:
         self.bbox = bbox
         self.frames_tracked += 1
         self.last_update = time.time()
+        x, y, w, h = bbox
+        cx = x + w / 2
+        cy = y + h / 2
+        self.centers.append((cx, cy))
 
     def reset(self):
         self.active = False
@@ -48,12 +52,13 @@ class TrackingState:
         self.detection_done = False
         self.start_time = 0.0
         self.last_update = 0.0
+        self.centers = []
 
     # =====================
     # Helper
     # =====================
     def is_stable(self, min_frames: int) -> bool:
-        return self.active and self.frames_tracked >= min_frames
+        return self.frames_tracked >= min_frames
 
     def is_timed_out(self, timeout_s: float) -> bool:
         return self.active and (time.time() - self.last_update) > timeout_s
