@@ -1,6 +1,7 @@
 # event.py
 import uuid
 import time
+from helpers import timestamp
 from typing import List, Dict, Optional, Tuple
 
 
@@ -29,7 +30,7 @@ class DetectionEvent:
         # === Identity ===
         self.event_id: str = str(uuid.uuid4())
         self.pi_id: str = pi_id
-        self.timestamp: float = time.time()
+        self.timestamp: timestamp = timestamp()
         self.source: str = source
 
         # === Detection results ===
