@@ -80,6 +80,7 @@ class MotionGate:
         raise ValueError(f"Unsupported FrameSource: {source}")    
 
     def _process_camera(self, frame, debug):
+        event = None  
         self.source = "Camera"
         # --- FPS ---
         now = time.time()
@@ -106,7 +107,6 @@ class MotionGate:
 
         self._maybe_run_yolo(frame, debug)
 
-        return event, debug
 
     def _process_video(self, frame, debug):
         self.source = "Video"
