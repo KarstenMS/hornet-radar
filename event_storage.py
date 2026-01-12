@@ -153,6 +153,7 @@ def upload_event(event: DetectionEvent) -> bool:
         "source": event.source,
         "approach_vec": event.approach_vec,
         "departure_vec": event.departure_vec,
+        "dwell_time": event.dwell_time,
     }
 
     return upload_json_to_supabase(data)

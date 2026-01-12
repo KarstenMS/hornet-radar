@@ -179,8 +179,6 @@ class MotionGate:
             debug["frames_tracked"] = self.tracking_state.frames_tracked
             debug["tracking_bbox"] = tuple(map(int, bbox))
 
-            print(f"Tracking started")
-
         else:
             self.tracking_state.reset()
 
@@ -196,9 +194,11 @@ class MotionGate:
             return None
 
         roi, offset = self._extract_roi(frame, self.tracking_state.bbox)
-        detections = run_detection(roi, self.model)    
-
-        print(f"Yolo detection run")
+        if roi.size == 0:
+            return
+        else:
+            detections = run_detection(roi, self.model)    
+            print(f"Yolo detection run")
 
 
         if not detections:
@@ -245,23 +245,23 @@ class MotionGate:
         t = TRACKER_TYPE.upper()
 
         if t == "KCF" and hasattr(cv2, "TrackerKCF_create"):
-            print("Tracker: KCF")
+            print("Tracking started using: KCF")
             return cv2.TrackerKCF_create()
 
         if t == "CSRT" and hasattr(cv2, "TrackerCSRT_create"):
-            print("Tracker: CSRT")
+            print("Tracking started using: CSRT")
             return cv2.TrackerCSRT_create()
 
         if t == "MOSSE" and hasattr(cv2, "TrackerMOSSE_create"):
-            print("Tracker: MOSSE")
+            print("Tracking started using: MOSSE")
             return cv2.TrackerMOSSE_create()
 
         if t == "AUTO":
             if hasattr(cv2, "TrackerKCF_create"):
-                print("Tracker: AUTO → KCF")
+                print("Tracking started using: AUTO → KCF")
                 return cv2.TrackerKCF_create()
             if hasattr(cv2, "TrackerCSRT_create"):
-                print("Tracker: AUTO → CSRT")
+                print("Tracking started using: AUTO → CSRT")
                 return cv2.TrackerCSRT_create()
 
         raise RuntimeError("No suitable OpenCV tracker available")
