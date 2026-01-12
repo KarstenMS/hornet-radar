@@ -203,6 +203,8 @@ class MotionGate:
 
         if not detections:
             return None
+         
+        print(f"Hornet detected!")
         
         frame_detections = []
         for d in detections:
@@ -233,7 +235,7 @@ class MotionGate:
         approach_vec = invert(approach_vec)
 
         print(f"Hornet detected!")
-        print(f"Approach vector: {vec_to_deg(approach_vec)}, Departure vector: {vec_to_deg(departure_vec)}")
+        print(f"Approach vector: {approach_vec}, Departure vector: {departure_vec}")
 
 
         return DetectionEvent(
