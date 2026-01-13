@@ -15,6 +15,8 @@ class TrackingState:
 
         # --- Detection control ---
         self.detection_done: bool = False
+        self.confirmed_event = None
+
 
         # --- Timing ---
         self.start_frame_ts = None

@@ -105,10 +105,8 @@ class MotionGate:
                     self.tracking_state.update(bbox)
                     debug["tracking"] = True
 
-        event = self._maybe_run_yolo(frame, debug)
-        if event:
-            return event, debug
-        return None, debug
+        self._maybe_run_yolo(frame, debug)
+
 
 
     def _process_video(self, frame, debug):
@@ -171,39 +169,47 @@ class MotionGate:
 
     def _update_tracking(self, frame, motion_boxes, debug):
         print("Update Tracking run")
+
+        # -------------------------------------------------
+        # 1. Tracker starten
+        # -------------------------------------------------
         if motion_boxes and not self.tracking_state.active:
             bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
             self.tracker = self._create_tracker()
             self.tracker.init(frame, bbox)
             self.tracking_state.start(self.tracker, bbox, frame.shape[:2])
-
+            return None
 
         if not self.tracking_state.active:
-            return
+            return None
 
+        # -------------------------------------------------
+        # 2. Tracker updaten
+        # -------------------------------------------------
         ok, bbox = self.tracking_state.tracker.update(frame)
+
         if ok:
             self.tracking_state.update(bbox)
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
             debug["tracking_bbox"] = tuple(map(int, bbox))
+            return None
 
-        else:
-            print("Tracker reset")
-            if self.tracking_state.confirmed:
-                event = self._finalize_event(self, snapshot)
-                self.tracking_state.reset()
-                return event
+        # -------------------------------------------------
+        # 3. Tracker verloren → Event ggf. finalisieren
+        # -------------------------------------------------
+        print("Tracker lost")
 
+        if self.tracking_state.confirmed and self.tracking_state.confirmed_event:
+            event = self._finalize_event(
+                self.tracking_state.confirmed_event
+            )
             self.tracking_state.reset()
- 
-        if self.tracking_state.is_timed_out(TRACKER_TIMEOUT):
-            print("Tracker timeout")
-            if self.tracking_state.confirmed:
-                event = self._finalize_event()
-                self.tracking_state.reset()
-                return event   
-            self.tracking_state.reset()
+            return event
+
+        self.tracking_state.reset()
+        return None
+
 
     def _maybe_run_yolo(self, frame, debug):
         print(f"Maybe Run Yolo")
@@ -251,17 +257,23 @@ class MotionGate:
             "timestamp": time.time(),
         }
 
+        self.tracking_state.confirmed_event = snapshot
         self.tracking_state.detection_done = True
         self.tracking_state.confirmed = True
     
-        return snapshot
+        return None
 
 
     def _finalize_event(self, event) -> DetectionEvent:
         print("Finalize Event")
 
         centers = event["centers"]
-        bbox = event["bbox"]
+
+        if len(centers) >= TRACKING_STABLE_FRAMES * 2:
+            departure_centers = centers[-TRACKING_STABLE_FRAMES:]
+        else:
+            departure_centers = centers
+
 
         # --- Compute movement vectors ---
         approach_vec = vector_from_points(
