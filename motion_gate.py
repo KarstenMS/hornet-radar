@@ -224,6 +224,7 @@ class MotionGate:
             return
         
         detections = run_detection(roi, self.model)   
+        print(f"Detection done")
         debug["yolo_ran"] = True 
         if not detections:
             return None
