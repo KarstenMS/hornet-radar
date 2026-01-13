@@ -105,8 +105,9 @@ class MotionGate:
                     self.tracking_state.update(bbox)
                     debug["tracking"] = True
 
-        self._maybe_run_yolo(frame, debug)
-        return event, debug
+        event = self._maybe_run_yolo(frame, debug)
+        if event:
+            return event, debug
 
 
     def _process_video(self, frame, debug):
@@ -189,7 +190,7 @@ class MotionGate:
         else:
             print("Tracker reset")
             if self.tracking_state.confirmed:
-                event = self._finalize_event()
+                event = self._finalize_event(self, snapshot)
                 self.tracking_state.reset()
                 return event
 
