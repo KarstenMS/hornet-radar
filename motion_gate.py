@@ -107,7 +107,7 @@ class MotionGate:
 
         event = self._maybe_run_yolo(frame, debug)
         if event:
-            return event, debug
+            return event
 
 
     def _process_video(self, frame, debug):
