@@ -106,6 +106,7 @@ class MotionGate:
                     debug["tracking"] = True
 
         self._maybe_run_yolo(frame, debug)
+        return None, debug
 
 
 
@@ -268,13 +269,7 @@ class MotionGate:
         print("Finalize Event")
 
         centers = event["centers"]
-
-        if len(centers) >= TRACKING_STABLE_FRAMES * 2:
-            departure_centers = centers[-TRACKING_STABLE_FRAMES:]
-        else:
-            departure_centers = centers
-
-
+  
         # --- Compute movement vectors ---
         approach_vec = vector_from_points(
             centers[:TRACKING_STABLE_FRAMES]
@@ -291,7 +286,7 @@ class MotionGate:
             detections=event["detections"],
             model_name=MODEL_NAME,
             source=self.source,
-            tracking_bbox=bbox,
+            tracking_bbox=event["bbox"],
             tracking_frames=event["frames_tracked"],
             frame_shape=event["frame_shape"],
             approach_vec=approach_vec,
