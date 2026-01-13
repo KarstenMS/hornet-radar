@@ -246,29 +246,23 @@ class MotionGate:
         debug["yolo_ran"] = True   
         print(f"Hornet detected!!!")
 
-        # --- Snapshot ---
-        snapshot = {
-            "frame": frame.copy(),
-            "frame_shape": frame.shape[:2],
-            "bbox": tuple(self.tracking_state.bbox),
-            "centers": list(self.tracking_state.centers),
-            "detections": frame_detections,
-            "frames_tracked": self.tracking_state.frames_tracked,
-            "dwell_time": self.tracking_state.dwell_time,
-            "timestamp": time.time(),
-        }
-
-        self.tracking_state.confirmed_event = snapshot
-        self.tracking_state.detection_done = True
         self.tracking_state.confirmed = True
+        self.tracking_state.confirmed_frame = frame.copy()
+        self.tracking_state.confirmed_bbox = self.tracking_state.bbox
+        self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
+        self.tracking_state.confirmed_frame_shape = frame.shape
+        self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
+
     
-        return None
+
 
 
     def _finalize_event(self, event) -> DetectionEvent:
         print("Finalize Event")
 
-        centers = event["centers"]
+        centers = self.tracking_state.confirmed_centers
+        bbox = self.tracking_state.confirmed_bbox
+        frame_shape = self.tracking_state.confirmed_frame_shape
   
         # --- Compute movement vectors ---
         approach_vec = vector_from_points(
@@ -278,21 +272,21 @@ class MotionGate:
             centers[-TRACKING_STABLE_FRAMES:]
         )
 
-        if approach_vec is not None:
+        if approach_vec:
             approach_vec = invert(approach_vec)
 
         return DetectionEvent(
             pi_id=PI_ID,
-            detections=event["detections"],
+            detections=self.tracking_state.detections,
             model_name=MODEL_NAME,
             source=self.source,
-            tracking_bbox=event["bbox"],
-            tracking_frames=event["frames_tracked"],
-            frame_shape=event["frame_shape"],
+            tracking_bbox=bbox,               
+            tracking_frames=len(centers),
+            frame_shape=frame_shape,           
             approach_vec=approach_vec,
             departure_vec=departure_vec,
-            dwell_time=event["dwell_time"],
-        )
+            dwell_time=self.tracking_state.dwell_time,
+    )
 
 
     def _create_tracker(self):

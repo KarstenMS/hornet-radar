@@ -15,8 +15,11 @@ class TrackingState:
 
         # --- Detection control ---
         self.detection_done: bool = False
-        self.confirmed_event = None
-
+        self.confirmed_frame = None
+        self.confirmed_bbox = None
+        self.confirmed_centers = None
+        self.confirmed_frame_shape = None
+        self.confirmed_frame_ts = None
 
         # --- Timing ---
         self.start_frame_ts = None
