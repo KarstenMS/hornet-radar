@@ -8,7 +8,7 @@ from event import DetectionEvent
 from sources import FrameSource
 from typing import Tuple, Optional, Dict
 from motion_vectors import vector_from_points
-from helpers import vec_to_deg, invert
+from helpers import invert
 
 # ============================================================
 # Classes
