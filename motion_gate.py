@@ -223,7 +223,8 @@ class MotionGate:
         if roi.size == 0:
             return
         
-        detections = run_detection(roi, self.model)    
+        detections = run_detection(roi, self.model)   
+        debug["yolo_ran"] = True 
         if not detections:
             return None
          
@@ -241,7 +242,7 @@ class MotionGate:
                 )
             })
 
-        debug["yolo_ran"] = True   
+           
         print(f"Hornet detected!!!")
 
         self.tracking_state.confirmed = True
