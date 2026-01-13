@@ -222,8 +222,7 @@ class MotionGate:
         if not detections:
             return None
          
-        print(f"Hornet detected!")
-        
+      
         frame_detections = []
         for d in detections:
             x1, y1, x2, y2 = d["bbox"]
@@ -242,6 +241,9 @@ class MotionGate:
         print(f"Hornet detected!")
 
         self.tracking_state.confirmed = True
+        self.tracking_state.confirmed_bbox = self.tracking_state.bbox
+        self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
+        self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.first_detection_frame = self.tracking_state.frames_tracked
         self.tracking_state.detections = frame_detections
         return None
@@ -249,7 +251,8 @@ class MotionGate:
     def _finalize_event(self) -> DetectionEvent:
         print("Finalize Event")
         # --- Compute movement vectors ---
-        centers = self.tracking_state.centers
+        centers = self.tracking_state.confirmed_centers
+        bbox = self.tracking_state.confirmed_bbox
 
         approach_vec = vector_from_points(
             centers[:TRACKING_STABLE_FRAMES]
