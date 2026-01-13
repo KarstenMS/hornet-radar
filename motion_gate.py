@@ -201,10 +201,8 @@ class MotionGate:
         # -------------------------------------------------
         print("Tracker lost")
 
-        if self.tracking_state.confirmed and self.tracking_state.confirmed_event:
-            event = self._finalize_event(
-                self.tracking_state.confirmed_event
-            )
+        if self.tracking_state.confirmed:
+            event = self._finalize_event()
             self.tracking_state.reset()
             return event
 
@@ -257,12 +255,11 @@ class MotionGate:
 
 
 
-    def _finalize_event(self, event) -> DetectionEvent:
+    def _finalize_event(self) -> DetectionEvent:
         print("Finalize Event")
 
-        centers = self.tracking_state.confirmed_centers
-        bbox = self.tracking_state.confirmed_bbox
-        frame_shape = self.tracking_state.confirmed_frame_shape
+        centers = list(self.tracking_state.confirmed_centers)
+        bbox = tuple(self.tracking_state.confirmed_bbox)
   
         # --- Compute movement vectors ---
         approach_vec = vector_from_points(
@@ -280,13 +277,13 @@ class MotionGate:
             detections=self.tracking_state.detections,
             model_name=MODEL_NAME,
             source=self.source,
-            tracking_bbox=bbox,               
-            tracking_frames=len(centers),
-            frame_shape=frame_shape,           
+            tracking_bbox=bbox,
+            tracking_frames=self.tracking_state.frames_tracked,
+            frame_shape=self.tracking_state.frame_shape,
             approach_vec=approach_vec,
             departure_vec=departure_vec,
             dwell_time=self.tracking_state.dwell_time,
-    )
+        )
 
 
     def _create_tracker(self):
