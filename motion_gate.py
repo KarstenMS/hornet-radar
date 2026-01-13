@@ -247,11 +247,15 @@ class MotionGate:
         print(f"Hornet detected!!!")
 
         self.tracking_state.confirmed = True
+        self.tracking_state.detection_done = True
+
         self.tracking_state.confirmed_frame = frame.copy()
-        self.tracking_state.confirmed_bbox = self.tracking_state.bbox
+        self.tracking_state.confirmed_bbox = tuple(self.tracking_state.bbox)
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.confirmed_frame_shape = frame.shape
         self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
+
+        self.tracking_state.detections = frame_detections
 
     
 
@@ -260,8 +264,11 @@ class MotionGate:
     def _finalize_event(self) -> DetectionEvent:
         print("Finalize Event")
 
-        centers = list(self.tracking_state.confirmed_centers)
-        bbox = tuple(self.tracking_state.confirmed_bbox)
+        # --- Extract data from tracking state ---
+        bbox = self.tracking_state.confirmed_bbox
+        centers = self.tracking_state.confirmed_centers
+        detections = self.tracking_state.detections
+        frame_shape = self.tracking_state.confirmed_frame_shape
   
         # --- Compute movement vectors ---
         approach_vec = vector_from_points(
@@ -271,17 +278,17 @@ class MotionGate:
             centers[-TRACKING_STABLE_FRAMES:]
         )
 
-        if approach_vec:
+        if approach_vec is not None:
             approach_vec = invert(approach_vec)
 
         return DetectionEvent(
             pi_id=PI_ID,
-            detections=self.tracking_state.detections,
+            detections=detections,
             model_name=MODEL_NAME,
             source=self.source,
             tracking_bbox=bbox,
-            tracking_frames=self.tracking_state.frames_tracked,
-            frame_shape=self.tracking_state.frame_shape,
+            tracking_frames=len(centers),
+            frame_shape=frame_shape,
             approach_vec=approach_vec,
             departure_vec=departure_vec,
             dwell_time=self.tracking_state.dwell_time,
