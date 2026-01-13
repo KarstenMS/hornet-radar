@@ -235,7 +235,7 @@ class MotionGate:
             })
 
         debug["yolo_ran"] = True   
-        print(f"Hornet detected!")
+        print(f"Hornet detected!!!")
 
         # --- Snapshot ---
         snapshot = {
