@@ -119,9 +119,10 @@ class MotionGate:
             motion_boxes = self._update_motion(frame, debug)
             self._update_tracking(frame, motion_boxes, debug)
 
-        event = self._maybe_run_yolo(frame, debug)
-        return event, debug
-        
+        yolo_event = self._maybe_run_yolo(frame, debug)
+        if yolo_event:
+            return yolo_event, debug
+        return None, debug  
 
     def _process_image(self, frame, debug):
         self.source = "Image"
@@ -214,11 +215,8 @@ class MotionGate:
         roi, offset = self._extract_roi(frame, self.tracking_state.bbox)
         if roi.size == 0:
             return
-        else:
-            detections = run_detection(roi, self.model)    
-           # print(f"Yolo detection done")
-
-
+        
+        detections = run_detection(roi, self.model)    
         if not detections:
             return None
          
@@ -236,24 +234,34 @@ class MotionGate:
                 )
             })
 
-        debug["yolo_ran"] = True
-   
+        debug["yolo_ran"] = True   
         print(f"Hornet detected!")
 
+        # --- Snapshot ---
+        snapshot = {
+            "frame": frame.copy(),
+            "frame_shape": frame.shape[:2],
+            "bbox": tuple(self.tracking_state.bbox),
+            "centers": list(self.tracking_state.centers),
+            "detections": frame_detections,
+            "frames_tracked": self.tracking_state.frames_tracked,
+            "dwell_time": self.tracking_state.dwell_time,
+            "timestamp": time.time(),
+        }
+
+        self.tracking_state.detection_done = True
         self.tracking_state.confirmed = True
-        self.tracking_state.confirmed_bbox = self.tracking_state.bbox
-        self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
-        self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
-        self.tracking_state.first_detection_frame = self.tracking_state.frames_tracked
-        self.tracking_state.detections = frame_detections
-        return None
+    
+        return snapshot
 
-    def _finalize_event(self) -> DetectionEvent:
+
+    def _finalize_event(self, event) -> DetectionEvent:
         print("Finalize Event")
-        # --- Compute movement vectors ---
-        centers = self.tracking_state.confirmed_centers
-        bbox = self.tracking_state.confirmed_bbox
 
+        centers = event["centers"]
+        bbox = event["bbox"]
+
+        # --- Compute movement vectors ---
         approach_vec = vector_from_points(
             centers[:TRACKING_STABLE_FRAMES]
         )
@@ -261,23 +269,22 @@ class MotionGate:
             centers[-TRACKING_STABLE_FRAMES:]
         )
 
-        if approach_vec:
+        if approach_vec is not None:
             approach_vec = invert(approach_vec)
-
-        dwell_time = self.tracking_state.dwell_time
 
         return DetectionEvent(
             pi_id=PI_ID,
-            detections=self.tracking_state.detections,
+            detections=event["detections"],
             model_name=MODEL_NAME,
             source=self.source,
-            tracking_bbox=self.tracking_state.bbox,
-            tracking_frames=self.tracking_state.frames_tracked,
-            frame_shape=self.tracking_state.frame_shape,
+            tracking_bbox=bbox,
+            tracking_frames=event["frames_tracked"],
+            frame_shape=event["frame_shape"],
             approach_vec=approach_vec,
             departure_vec=departure_vec,
-            dwell_time=dwell_time,
+            dwell_time=event["dwell_time"],
         )
+
 
     def _create_tracker(self):
 
