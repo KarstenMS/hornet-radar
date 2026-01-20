@@ -200,6 +200,7 @@ class MotionGate:
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
             debug["tracking_bbox"] = tuple(map(int, bbox))
+
             return None
 
         # -------------------------------------------------
@@ -235,7 +236,7 @@ class MotionGate:
 
         if not detections:
             return None
-         
+        best_det = frame_detections[0]
       
         frame_detections = []
         for d in detections:
@@ -260,32 +261,24 @@ class MotionGate:
         self.tracking_state.confirmed_frame_shape = self.tracking_state.last_good_frame_shape
 
         self.tracking_state.confirmed_bbox = frame_detections[0]["bbox"]
+        self.tracking_state.confirmed_yolo_bbox = best_det["bbox"]  
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
 
         self.tracking_state.detections = frame_detections
-
+        debug["yolo_bbox"] = frame_detections[0]["bbox"]  # (x1,y1,x2,y2)
     
 
 
 
     def _finalize_event(self) -> DetectionEvent:
         print("Finalize Event")
-        print(
-            "CONFIRMED:",
-            self.tracking_state.confirmed,
-            "FRAME UPDATED:",
-            not self.tracking_state.confirmed
-        )
-
-
 
 
         # --- Extract data from tracking state ---
-        bbox = self.tracking_state.confirmed_bbox
+
         centers = self.tracking_state.confirmed_centers
-        detections = self.tracking_state.detections
-        frame_shape = self.tracking_state.confirmed_frame_shape
+
   
         # --- Compute movement vectors ---
         approach_vec = vector_from_points(
@@ -300,12 +293,12 @@ class MotionGate:
 
         return DetectionEvent(
             pi_id=PI_ID,
-            detections=detections,
+            detections=self.tracking_state.detections,
             model_name=MODEL_NAME,
             source=self.source,
-            tracking_bbox=bbox,
-            tracking_frames=len(centers),
-            frame_shape=frame_shape,
+            tracking_bbox=self.tracking_state.confirmed_yolo_bbox,
+            tracking_frames=centers,
+            frame_shape=self.tracking_state.confirmed_frame_shape,
             approach_vec=approach_vec,
             departure_vec=departure_vec,
             dwell_time=self.tracking_state.dwell_time,
