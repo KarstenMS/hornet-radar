@@ -191,8 +191,12 @@ class MotionGate:
 
         if ok:
             self.tracking_state.update(bbox)
-            self.tracking_state.last_good_frame = frame.copy()
-            self.tracking_state.last_good_frame_shape = frame.shape
+            if not self.tracking_state.confirmed:
+                self.tracking_state.last_good_frame = frame.copy()
+                self.tracking_state.last_good_frame_shape = frame.shape
+            else:
+                self.tracking_state.frames_since_confirmed += 1
+
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
             debug["tracking_bbox"] = tuple(map(int, bbox))
@@ -268,11 +272,12 @@ class MotionGate:
     def _finalize_event(self) -> DetectionEvent:
         print("Finalize Event")
         print(
-            "FRAME OK:",
-            self.tracking_state.last_good_frame is not None,
-            "YOLO OK:",
-            self.tracking_state.confirmed
+            "CONFIRMED:",
+            self.tracking_state.confirmed,
+            "FRAME UPDATED:",
+            not self.tracking_state.confirmed
         )
+
 
 
 

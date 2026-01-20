@@ -39,6 +39,8 @@ class TrackingState:
             self.detections = []
             self.last_good_frame = None
             self.last_good_frame_shape = None
+            self.frames_since_confirmed = 0
+
             
 
     # =====================
