@@ -252,7 +252,7 @@ class MotionGate:
         self.tracking_state.detection_done = True
 
         self.tracking_state.confirmed_frame = frame.copy()
-        self.tracking_state.confirmed_bbox = tuple(self.tracking_state.bbox)
+        self.tracking_state.confirmed_bbox = frame_detections[0]["bbox"]
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.confirmed_frame_shape = frame.shape
         self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
@@ -271,7 +271,7 @@ class MotionGate:
 
 
         # --- Extract data from tracking state ---
-        bbox = self.tracking_state.detections[0]["bbox"]
+        bbox = self.tracking_state.confirmed_bbox
         centers = self.tracking_state.confirmed_centers
         detections = self.tracking_state.detections
         frame_shape = self.tracking_state.confirmed_frame_shape
