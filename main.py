@@ -21,6 +21,7 @@ from camera import Camera
 from motion_gate import MotionGate
 from event_storage import save_event, upload_event
 from sources import FrameSource
+import tracking_state
 
 
 # ============================================================
@@ -170,6 +171,7 @@ def draw_debug_overlay(frame, debug: dict):
             cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2
         )
         y += step
+
     line(f"Press ESC to exit")
     line(f"Source: {debug.get('source')}")
     line(f"FPS: {debug.get('fps', 0):.1f}" if debug.get("fps") else "FPS: -")
@@ -180,16 +182,28 @@ def draw_debug_overlay(frame, debug: dict):
     line(f"Frames tracked: {debug.get('frames_tracked', 0)}")
     line(f"YOLO ran: {'YES' if debug.get('yolo_ran') else 'NO'}")
 
-    bbox = debug.get("tracking_bbox")
-    if bbox:
-        x, y, w, h = map(int, bbox)
+    yolo_bbox = debug.get("yolo_bbox")
+    if yolo_bbox:
+        x1, y1, x2, y2 = yolo_bbox
+        cv2.rectangle(
+            frame,
+            (int(x1), int(y1)),
+            (int(x2), int(y2)),
+            (0, 255, 0),
+            2
+    )
+        
+    # For Debug
+    tracking_bbox = debug.get("tracking_bbox") 
+    if tracking_bbox:
+        x, y, w, h = tracking_bbox
         cv2.rectangle(
             frame,
             (x, y),
             (x + w, y + h),
-            (0, 255, 255),
-            2
-        )
+            (255, 0, 0),
+            1
+        )    
 
 
 # ============================================================

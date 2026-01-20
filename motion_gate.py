@@ -236,7 +236,7 @@ class MotionGate:
 
         if not detections:
             return None
-        best_det = frame_detections[0]
+       
       
         frame_detections = []
         for d in detections:
@@ -251,7 +251,7 @@ class MotionGate:
                 )
             })
 
-           
+        best_det = frame_detections[0]   
         print(f"Hornet detected!!!")
 
         self.tracking_state.confirmed = True
