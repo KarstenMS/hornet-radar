@@ -191,6 +191,8 @@ class MotionGate:
 
         if ok:
             self.tracking_state.update(bbox)
+            self.tracking_state.last_good_frame = frame.copy()
+            self.tracking_state.last_good_frame_shape = frame.shape
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
             debug["tracking_bbox"] = tuple(map(int, bbox))
@@ -226,7 +228,6 @@ class MotionGate:
         detections = run_detection(roi, self.model)   
         print(f"Detection done, found {len(detections)} objects")
         debug["yolo_ran"] = True 
-        print("YOLO FRAME TS:", self.tracking_state.end_frame_ts)
 
         if not detections:
             return None
@@ -251,10 +252,11 @@ class MotionGate:
         self.tracking_state.confirmed = True
         self.tracking_state.detection_done = True
 
-        self.tracking_state.confirmed_frame = frame.copy()
+        self.tracking_state.confirmed_frame = self.tracking_state.last_good_frame
+        self.tracking_state.confirmed_frame_shape = self.tracking_state.last_good_frame_shape
+
         self.tracking_state.confirmed_bbox = frame_detections[0]["bbox"]
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
-        self.tracking_state.confirmed_frame_shape = frame.shape
         self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
 
         self.tracking_state.detections = frame_detections
@@ -265,9 +267,13 @@ class MotionGate:
 
     def _finalize_event(self) -> DetectionEvent:
         print("Finalize Event")
-        print("FINALIZE FRAME TS:", self.tracking_state.confirmed_frame_ts)
-        print("YOLO bbox:", self.tracking_state.detections[0]["bbox"])
-        print("Tracker bbox:", self.tracking_state.confirmed_bbox)
+        print(
+            "FRAME OK:",
+            self.tracking_state.last_good_frame is not None,
+            "YOLO OK:",
+            self.tracking_state.confirmed
+        )
+
 
 
         # --- Extract data from tracking state ---
