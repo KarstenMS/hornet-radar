@@ -226,6 +226,8 @@ class MotionGate:
         detections = run_detection(roi, self.model)   
         print(f"Detection done, found {len(detections)} objects")
         debug["yolo_ran"] = True 
+        print("YOLO FRAME TS:", self.tracking_state.end_frame_ts)
+
         if not detections:
             return None
          
@@ -263,7 +265,7 @@ class MotionGate:
 
     def _finalize_event(self) -> DetectionEvent:
         print("Finalize Event")
-
+        print("FINALIZE FRAME TS:", self.tracking_state.confirmed_frame_ts)
         print("YOLO bbox:", self.tracking_state.detections[0]["bbox"])
         print("Tracker bbox:", self.tracking_state.confirmed_bbox)
 
