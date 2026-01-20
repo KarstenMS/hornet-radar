@@ -264,6 +264,10 @@ class MotionGate:
     def _finalize_event(self) -> DetectionEvent:
         print("Finalize Event")
 
+        print("YOLO bbox:", self.tracking_state.detections[0]["bbox"])
+        print("Tracker bbox:", self.tracking_state.confirmed_bbox)
+
+
         # --- Extract data from tracking state ---
         bbox = self.tracking_state.detections[0]["bbox"]
         centers = self.tracking_state.confirmed_centers
