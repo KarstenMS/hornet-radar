@@ -265,7 +265,7 @@ class MotionGate:
         print("Finalize Event")
 
         # --- Extract data from tracking state ---
-        bbox = self.tracking_state.confirmed_bbox
+        bbox = self.tracking_state.detections[0]["bbox"]
         centers = self.tracking_state.confirmed_centers
         detections = self.tracking_state.detections
         frame_shape = self.tracking_state.confirmed_frame_shape
