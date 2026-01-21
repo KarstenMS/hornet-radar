@@ -297,7 +297,7 @@ class MotionGate:
             model_name=MODEL_NAME,
             source=self.source,
             tracking_bbox=self.tracking_state.confirmed_yolo_bbox,
-            tracking_frames=centers,
+            tracking_frames=len(centers),
             frame_shape=self.tracking_state.confirmed_frame_shape,
             approach_vec=approach_vec,
             departure_vec=departure_vec,
