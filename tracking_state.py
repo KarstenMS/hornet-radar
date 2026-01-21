@@ -33,6 +33,8 @@ class TrackingState:
             self.confirmed_frame = None
             self.confirmed_frame_shape = None
             self.confirmed_frame_ts = None
+            self.stable_bbox = None
+
 
             self.confirmed_bbox = None
             self.confirmed_yolo_bbox = None
