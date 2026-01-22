@@ -202,7 +202,7 @@ class MotionGate:
 
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
-            debug["tracking_bbox"] = self.xywh_to_xyxy(bbox)
+            debug["tracking_bbox"] = tuple(map(int, bbox))
 
             return None
 
@@ -261,8 +261,8 @@ class MotionGate:
         self.tracking_state.confirmed = True
         self.tracking_state.detection_done = True
 
-        self.tracking_state.confirmed_frame = self.tracking_state.last_good_frame.copy()
-        self.tracking_state.confirmed_frame_shape = self.tracking_state.last_good_frame_shape
+        self.tracking_state.confirmed_frame = frame.copy()
+        self.tracking_state.confirmed_frame_shape = frame.shape
         self.tracking_state.confirmed_bbox = best_det["bbox"]
         self.tracking_state.confirmed_yolo_bbox = best_det["bbox"]  
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
@@ -271,7 +271,7 @@ class MotionGate:
         self.tracking_state.stable_bbox = best_det["bbox"]
         self.tracking_state.detections = frame_detections
         
-        debug["yolo_bbox"] = frame_detections[0]["bbox"]  # (x1,y1,x2,y2)
+        debug["yolo_bbox"] = best_det["bbox"]
 
         print("STABLE BBOX:", self.tracking_state.stable_bbox)
         print("CURRENT BBOX:", self.tracking_state.bbox)
