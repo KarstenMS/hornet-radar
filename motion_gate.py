@@ -178,6 +178,9 @@ class MotionGate:
             bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
             self.tracker = self._create_tracker()
             self.tracker.init(frame, bbox)
+            print("TRACKER INIT BBOX:", bbox)
+            print("FRAME SHAPE:", frame.shape)
+
             self.tracking_state.start(self.tracker, bbox, frame.shape[:2])
             return None
 
