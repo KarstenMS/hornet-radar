@@ -350,6 +350,6 @@ class MotionGate:
 
         return roi, (x, y)
 
-    def xywh_to_xyxy(bbox):
+    def xywh_to_xyxy(self,bbox):
         x, y, w, h = bbox
         return (x, y, x + w, y + h)
