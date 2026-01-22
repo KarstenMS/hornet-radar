@@ -202,7 +202,7 @@ class MotionGate:
 
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
-            debug["tracking_bbox"] = tuple(map(int, bbox))
+            debug["tracking_bbox"] = self.xywh_to_xyxy(bbox)
 
             return None
 
@@ -350,3 +350,6 @@ class MotionGate:
 
         return roi, (x, y)
 
+    def xywh_to_xyxy(bbox):
+        x, y, w, h = bbox
+        return (x, y, x + w, y + h)
