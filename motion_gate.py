@@ -275,7 +275,7 @@ class MotionGate:
 
         print("STABLE BBOX:", self.tracking_state.stable_bbox)
         print("CURRENT BBOX:", self.tracking_state.bbox)
-
+        print("UPLOAD BBOX:", self.tracking_state.confirmed_bbox)
 
 
     def _finalize_event(self) -> DetectionEvent:
