@@ -189,21 +189,20 @@ def draw_debug_overlay(frame, debug: dict):
             frame,
             (int(x1), int(y1)),
             (int(x2), int(y2)),
-            (0, 255, 0),
+            (0, 255, 0),    # grün für YOLO
             2
     )
         
-    # For Debug
     tracking_bbox = debug.get("tracking_bbox") 
     if tracking_bbox:
-        x, y, w, h = tracking_bbox
+        x1, y1, x2, y2 = tracking_bbox  
         cv2.rectangle(
             frame,
-            (x, y),
-            (x + w, y + h),
-            (255, 0, 0),
+            (x1, y1),
+            (x2, y2),
+            (255, 0, 0),  # blau für Tracker
             1
-        )    
+        )
 
 
 # ============================================================
