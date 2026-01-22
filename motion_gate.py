@@ -224,6 +224,7 @@ class MotionGate:
             return None
 
         if self.tracking_state.detection_done:
+            self.tracking_state.stable_bbox = self.tracking_state.bbox
             return None
 
         roi, offset = self._extract_roi(frame, self.tracking_state.stable_bbox)

@@ -1,6 +1,5 @@
-
 import time
-from config import TRACKING_STABLE_FRAMES
+
 
 class TrackingState:
     # =====================
@@ -78,8 +77,6 @@ class TrackingState:
         self.dwell_time = self.end_frame_ts - self.start_frame_ts
         self.last_update = self.end_frame_ts
 
-        if self.stable_bbox is None and self.is_stable(TRACKING_STABLE_FRAMES):
-            self.stable_bbox = bbox
 
     # =====================
     # Helper
