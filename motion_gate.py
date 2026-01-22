@@ -265,7 +265,7 @@ class MotionGate:
         self.tracking_state.confirmed_frame_shape = self.tracking_state.last_good_frame_shape
 
         self.tracking_state.confirmed_bbox = best_det["bbox"]
-        self.tracking_state.stable_bbox = best_det["bbox"]
+        #self.tracking_state.stable_bbox = best_det["bbox"]
         self.tracking_state.confirmed_yolo_bbox = best_det["bbox"]  
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
