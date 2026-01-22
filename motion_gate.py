@@ -269,10 +269,9 @@ class MotionGate:
         self.tracking_state.detections = frame_detections
         debug["yolo_bbox"] = frame_detections[0]["bbox"]  # (x1,y1,x2,y2)
     
-        print("ROI bbox:", self.tracking_state.stable_bbox)
-        print("YOLO bbox:", frame_detections[0]["bbox"])
 
-
+        print("STABLE BBOX:", self.tracking_state.stable_bbox)
+        print("CURRENT BBOX:", self.tracking_state.bbox)
 
 
 
