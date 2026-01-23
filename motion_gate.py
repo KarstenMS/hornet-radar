@@ -112,18 +112,30 @@ class MotionGate:
 
     def _process_video(self, frame, debug):
         self.source = "Video"
+        debug["motion"] = False
+        debug["tracking"] = False
 
         self.frame_count += 1
         process_this_frame = (self.frame_count % FRAME_SKIP == 0)
 
         if process_this_frame:
-            motion_boxes = self._update_motion(frame, debug)
-            self._update_tracking(frame, motion_boxes, debug)
+            detections = run_detection(frame, self.model)
+        if not detections:
+            return None, debug
+        
+        event = DetectionEvent(
+            pi_id=PI_ID,
+            detections=detections,
+            tracking_bbox=self.yolo_bbox,
+            tracking_frames=0,
+            model_name=MODEL_NAME,
+            source=self.source,
+            frame_shape=frame.shape[:2],
+        )
 
-        yolo_event = self._maybe_run_yolo(frame, debug)
-        if yolo_event:
-            return yolo_event, debug
-        return None, debug  
+        debug["yolo_ran"] = True
+        debug["yolo_done"] = True
+        return event, debug
 
     def _process_image(self, frame, debug):
         self.source = "Image"
