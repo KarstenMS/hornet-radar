@@ -195,11 +195,11 @@ class MotionGate:
         if ok:
             self.tracking_state.update(bbox)
 
-           # if not self.tracking_state.confirmed:
-           #     self.tracking_state.last_good_frame = frame.copy()
-           #     self.tracking_state.last_good_frame_shape = frame.shape
-           # else:
-           #     self.tracking_state.frames_since_confirmed += 1
+            if not self.tracking_state.confirmed:
+                self.tracking_state.last_good_frame = frame.copy()
+                self.tracking_state.last_good_frame_shape = frame.shape
+            else:
+                self.tracking_state.frames_since_confirmed += 1
 
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
