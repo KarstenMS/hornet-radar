@@ -20,7 +20,6 @@ class DetectionEvent:
         model_name: str,
         source: str,
         tracking_bbox: Optional[Tuple[int, int, int, int]] = None,
-        roi_bbox: Optional[Tuple[int, int, int, int]] = None,
         tracking_frames: int = 0,
         frame_shape: Optional[Tuple[int, int]] = None,
         approach_vec: Optional[Tuple[int, int]] = None,
@@ -44,7 +43,6 @@ class DetectionEvent:
 
         # === Tracking context ===
         self.tracking_bbox = tracking_bbox
-        self.roi_bbox = roi_bbox
         self.tracking_frames = tracking_frames
         self.frame_shape = frame_shape
 
@@ -90,7 +88,6 @@ class DetectionEvent:
             "detections": self.detections,
             "tracking_bbox": self.tracking_bbox,
             "tracking_frames": self.tracking_frames,
-            "roi_bbox": self.roi_bbox,
             "frame_shape": self.frame_shape,
             "trajectory": self.trajectory,
             "approach_vec": self.approach_vec,

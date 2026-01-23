@@ -129,9 +129,7 @@ class MotionGate:
         self.source = "Image"
         debug["motion"] = False
         debug["tracking"] = False
-        h, w = frame.shape[:2]
-        roi_bbox = (0, 0, w, h)
-
+   
         detections = run_detection(frame, self.model)
         if not detections:
             return None, debug
@@ -140,7 +138,6 @@ class MotionGate:
             pi_id=PI_ID,
             detections=detections,
             tracking_bbox=None,
-            roi_bbox=roi_bbox,
             tracking_frames=0,
             model_name=MODEL_NAME,
             source=self.source,

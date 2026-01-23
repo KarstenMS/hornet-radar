@@ -29,7 +29,7 @@ def save_event(event, frame) -> Optional[str]:
     Returns:
         Path to event directory or None on failure.
     """
-    
+
     if frame is None:
         raise RuntimeError("Event has no confirmed frame")
     
@@ -150,7 +150,6 @@ def upload_event(event: DetectionEvent) -> bool:
         "image_url": image_url,
         "thumb_url": thumb_url,
         "tracking_bbox": event.tracking_bbox,
-        "roi_bbox": event.roi_bbox,
         "tracking_frames": event.tracking_frames,
         "model": event.model_name,
         "source": event.source,
