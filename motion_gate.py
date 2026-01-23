@@ -129,6 +129,7 @@ class MotionGate:
             detections=detections,
             tracking_bbox=None,
             tracking_frames=0,
+            frame=frame,
             model_name=MODEL_NAME,
             source=self.source,
             frame_shape=frame.shape[:2],
