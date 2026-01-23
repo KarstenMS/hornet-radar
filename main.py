@@ -107,7 +107,7 @@ def process_videos(motion_gate: MotionGate):
             print(f"Debug: {debug}")
 
             if event and event.confidence >= CONFIDENCE_THRESHOLD:
-                save_event(event, frame)
+                save_event(event, event.frame)
                 upload_event(event)
                 break  # stop after first confirmed event
 

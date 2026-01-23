@@ -236,9 +236,6 @@ class MotionGate:
         if self.tracking_state.bbox is None:
             return None
     
-       # if (self.tracking_state.stable_bbox is None and self.tracking_state.bbox is not None):
-       #     self.tracking_state.stable_bbox = self.tracking_state.bbox
-
         roi, offset = self._extract_roi(frame, self.tracking_state.bbox)
         if roi.size == 0:
             return None
@@ -282,12 +279,6 @@ class MotionGate:
         # ✅ Bewegung weiter sammeln
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.detections = frame_detections
-
-
-        #self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
-
-        #self.tracking_state.stable_bbox = best_det["bbox"]
-
         
         debug["yolo_bbox"] = best_det["bbox"]
 
