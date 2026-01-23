@@ -134,7 +134,8 @@ def process_camera(motion_gate: MotionGate):
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
             event, debug = motion_gate.process_frame(frame, FrameSource.CAMERA)
-            print(f"Debug: {event}")
+            print(f"Debug: {debug}")
+            print(f"Event: {event}")
             if event and event.confidence >= CONFIDENCE_THRESHOLD:
                 save_event(event, event.frame)
                 upload_event(event)
