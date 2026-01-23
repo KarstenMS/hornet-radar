@@ -194,11 +194,12 @@ class MotionGate:
 
         if ok:
             self.tracking_state.update(bbox)
-            if not self.tracking_state.confirmed:
-                self.tracking_state.last_good_frame = frame.copy()
-                self.tracking_state.last_good_frame_shape = frame.shape
-            else:
-                self.tracking_state.frames_since_confirmed += 1
+
+           # if not self.tracking_state.confirmed:
+           #     self.tracking_state.last_good_frame = frame.copy()
+           #     self.tracking_state.last_good_frame_shape = frame.shape
+           # else:
+           #     self.tracking_state.frames_since_confirmed += 1
 
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
@@ -223,15 +224,24 @@ class MotionGate:
     def _maybe_run_yolo(self, frame, debug):
         print(f"Maybe Run Yolo")
 
+        # --- nur nach stabiler Trackingphase ---
         if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
             return None
+        
+         # --- YOLO nur einmal ---
+        if self.tracking_state.detection_done:
+            return None
+        
+        # --- ROI aus aktueller Tracking-BBox ---
+        if self.tracking_state.bbox is None:
+            return None
+    
+       # if (self.tracking_state.stable_bbox is None and self.tracking_state.bbox is not None):
+       #     self.tracking_state.stable_bbox = self.tracking_state.bbox
 
-        if (self.tracking_state.stable_bbox is None and self.tracking_state.bbox is not None):
-            self.tracking_state.stable_bbox = self.tracking_state.bbox
-
-        roi, offset = self._extract_roi(frame, self.tracking_state.stable_bbox)
+        roi, offset = self._extract_roi(frame, self.tracking_state.bbox)
         if roi.size == 0:
-            return
+            return None
         
         detections = run_detection(roi, self.model)   
         print(f"Detection done, found {len(detections)} objects")
@@ -240,7 +250,7 @@ class MotionGate:
         if not detections:
             return None
        
-      
+        # --- YOLO BBox → Frame-Koordinaten ---
         frame_detections = []
         print("Detections:", detections)
         for d in detections:
@@ -248,10 +258,10 @@ class MotionGate:
             frame_detections.append({
                 **d,
                 "bbox": (
-                    x1 + offset[0],
-                    y1 + offset[1],
-                    x2 + offset[0],
-                    y2 + offset[1],
+                int(x1 + offset[0]),
+                int(y1 + offset[1]),
+                int(x2 + offset[0]),
+                int(y2 + offset[1]),
                 )
             })
 
@@ -261,21 +271,30 @@ class MotionGate:
         self.tracking_state.confirmed = True
         self.tracking_state.detection_done = True
 
+        # ✅ DAS Frame, auf dem YOLO lief
         self.tracking_state.confirmed_frame = frame.copy()
         self.tracking_state.confirmed_frame_shape = frame.shape
-        self.tracking_state.confirmed_bbox = best_det["bbox"]
-        self.tracking_state.confirmed_yolo_bbox = best_det["bbox"]  
-        self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
-        self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
 
-        self.tracking_state.stable_bbox = best_det["bbox"]
+        # ✅ DIE YOLO BOX (nicht Tracker!)
+        self.tracking_state.confirmed_bbox = best_det["bbox"]
+        self.tracking_state.confirmed_yolo_bbox = best_det["bbox"] 
+
+        # ✅ Bewegung weiter sammeln
+        self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.detections = frame_detections
+
+
+        #self.tracking_state.confirmed_frame_ts = self.tracking_state.end_frame_ts
+
+        #self.tracking_state.stable_bbox = best_det["bbox"]
+
         
         debug["yolo_bbox"] = best_det["bbox"]
 
-        print("STABLE BBOX:", self.tracking_state.stable_bbox)
-        print("CURRENT BBOX:", self.tracking_state.bbox)
-        print("UPLOAD BBOX:", self.tracking_state.confirmed_bbox)
+        print("YOLO CONFIRMED BBOX:", best_det["bbox"])
+        print("TRACKER BBOX (live):", self.tracking_state.bbox)
+
+        return None
 
 
     def _finalize_event(self) -> DetectionEvent:
