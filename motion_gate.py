@@ -309,15 +309,8 @@ class MotionGate:
 
   
         # --- Compute movement vectors ---
-        approach_vec = vector_from_points(
-            centers[:TRACKING_STABLE_FRAMES]
-        )
-        departure_vec = vector_from_points(
-            centers[-TRACKING_STABLE_FRAMES:]
-        )
-
-        if approach_vec is not None:
-            approach_vec = invert(approach_vec)
+        approach_vec = vector_from_points(centers, mode="approach")
+        departure_vec = vector_from_points(centers, mode="departure")
 
         return DetectionEvent(
             pi_id=PI_ID,
