@@ -127,7 +127,7 @@ class MotionGate:
         event = DetectionEvent(
             pi_id=PI_ID,
             detections=detections,
-            tracking_bbox=self.yolo_bbox,
+            tracking_bbox=None,
             tracking_frames=0,
             model_name=MODEL_NAME,
             source=self.source,
