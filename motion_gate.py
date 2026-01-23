@@ -115,6 +115,7 @@ class MotionGate:
         debug["motion"] = False
         debug["tracking"] = False
 
+        detections = []
         self.frame_count += 1
         process_this_frame = (self.frame_count % FRAME_SKIP == 0)
 
