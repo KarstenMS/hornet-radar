@@ -29,7 +29,10 @@ def save_event(event, frame) -> Optional[str]:
     Returns:
         Path to event directory or None on failure.
     """
-
+    
+    if frame is None:
+        raise RuntimeError("Event has no confirmed frame")
+    
     # --------------------------------------------------------
     # Prepare directories
     # --------------------------------------------------------

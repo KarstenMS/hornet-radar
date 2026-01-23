@@ -272,8 +272,8 @@ class MotionGate:
         self.tracking_state.detection_done = True
 
         # ✅ DAS Frame, auf dem YOLO lief
-        self.tracking_state.confirmed_frame = roi
-        self.tracking_state.confirmed_frame_shape = roi.shape
+        self.tracking_state.confirmed_frame = frame
+        self.tracking_state.confirmed_frame_shape = frame.shape
 
         # ✅ DIE YOLO BOX (nicht Tracker!)
         self.tracking_state.confirmed_bbox = best_det["bbox"]
@@ -322,6 +322,7 @@ class MotionGate:
             detections=self.tracking_state.detections,
             model_name=MODEL_NAME,
             source=self.source,
+            frame=self.tracking_state.confirmed_frame,
             tracking_bbox=self.tracking_state.confirmed_yolo_bbox,
             tracking_frames=len(centers),
             frame_shape=self.tracking_state.confirmed_frame_shape,

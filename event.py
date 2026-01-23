@@ -26,6 +26,7 @@ class DetectionEvent:
         approach_vec: Optional[Tuple[int, int]] = None,
         departure_vec: Optional[Tuple[int, int]] = None,
         dwell_time: Optional[float] = None,
+        frame=None,
     ):
         # === Identity ===
         self.event_id: str = str(uuid.uuid4())
@@ -36,6 +37,7 @@ class DetectionEvent:
         # === Detection results ===
         self.detections: List[Dict] = detections
         self.model_name: str = model_name
+        self.frame = frame
 
         # === Confidence ===
         self.confidence = max([d["confidence"] for d in detections], default=0.0)
