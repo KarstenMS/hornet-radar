@@ -196,6 +196,7 @@ class MotionGate:
             return None
 
         if not self.tracking_state.active:
+            print("No active tracker")
             return None
 
         # -------------------------------------------------
@@ -204,6 +205,7 @@ class MotionGate:
         ok, bbox = self.tracking_state.tracker.update(frame)
 
         if ok:
+            print("Tracker update successful")
             self.tracking_state.update(bbox)
 
             if not self.tracking_state.confirmed:
