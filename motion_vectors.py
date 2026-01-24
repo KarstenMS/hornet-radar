@@ -1,5 +1,6 @@
 import math
 from typing import List, Optional, Tuple
+from config import TRACKING_STABLE_FRAMES
 
 def vector_from_points(
     points: List[Tuple[float, float]],
