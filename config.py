@@ -45,8 +45,8 @@ MOTION_TRACK_LOST_TIMEOUT = 3.0 # Seconds, after which tracking stopps, if no mo
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"       # "picamera2" | "webcam"
 
-CAMERA_WIDTH = 1024
-CAMERA_HEIGHT = 768
+CAMERA_WIDTH = 4000
+CAMERA_HEIGHT = 3000
 CAMERA_FPS = 30
 
 # Webcam only
