@@ -5,10 +5,10 @@ Contains constants used throughout the project.
 import os
 
 # --- Raspberry Pi setup ---
-PI_ID = "PI_01"
+PI_ID = "PI_02"
 
-LATITUDE = 46.953091394201636       # Get the values from Google maps
-LONGITUDE = 13.929636367430676
+LATITUDE = 48.15413119783116     # Get the values from Google maps
+LONGITUDE = 11.459030279093017
 
 SHOW_DEBUG_VIDEO = True             # Shows Debug Video on the PI (requires GUI), default False
 
