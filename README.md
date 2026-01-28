@@ -1,2 +1,2 @@
 # hornet-radar
-A detection system for Asian hornets (Vespa velutina nigrithorax) and European hornets (Vespa crabro) for nest detection
+Detection system for European (Vespa crapro) and Asian hornets (Vespa velutina nigrithorax)
