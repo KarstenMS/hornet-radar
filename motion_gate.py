@@ -383,7 +383,7 @@ class MotionGate:
         x, y, w, h = bbox
         return (x, y, x + w, y + h)
     
-    def bbox_is_plausible(bbox, frame_shape):
+    def bbox_is_plausible(self, bbox, frame_shape):
         x, y, w, h = bbox
         fh, fw = frame_shape
 
