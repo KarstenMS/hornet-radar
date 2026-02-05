@@ -158,9 +158,6 @@ def process_camera(motion_gate: MotionGate):
 # ============================================================
 
 def draw_debug_overlay(frame, debug: dict):
-    """
-    Renders debug information returned by MotionGate.
-    """
     y = 20
     step = 22
 
@@ -172,37 +169,54 @@ def draw_debug_overlay(frame, debug: dict):
         )
         y += step
 
-    line(f"Press ESC to exit")
+    # --- Text Infos ---
+    line("Press ESC to exit")
     line(f"Source: {debug.get('source')}")
     line(f"FPS: {debug.get('fps', 0):.1f}" if debug.get("fps") else "FPS: -")
-    line(f"Motion: {'YES' if debug.get('motion') else 'NO'}",
-         (0, 0, 255) if debug.get("motion") else (0, 255, 0))
-    line(f"Tracking: {'YES' if debug.get('tracking') else 'NO'}",
-         (0, 255, 255) if debug.get("tracking") else (150, 150, 150))
+
+    line(
+        f"Motion: {'YES' if debug.get('motion') else 'NO'}",
+        (0, 0, 255) if debug.get("motion") else (0, 255, 0)
+    )
+
+    line(
+        f"Tracking: {'YES' if debug.get('tracking') else 'NO'}",
+        (0, 255, 255) if debug.get("tracking") else (150, 150, 150)
+    )
+
     line(f"Frames tracked: {debug.get('frames_tracked', 0)}")
     line(f"YOLO ran: {'YES' if debug.get('yolo_ran') else 'NO'}")
 
+    plausible = debug.get("bbox_plausible")
+    if plausible is not None:
+        line(
+            f"BBox plausible: {'YES' if plausible else 'NO'}",
+            (0, 255, 0) if plausible else (0, 0, 255)
+        )
+
+    # --- YOLO BBox (grün, xyxy) ---
     yolo_bbox = debug.get("yolo_bbox")
     if yolo_bbox:
-        x1, y1, x2, y2 = yolo_bbox
-        cv2.rectangle(
-            frame,
-            (int(x1), int(y1)),
-            (int(x2), int(y2)),
-            (0, 255, 0),    # grün für YOLO
-            2
-    )
-        
-    tracking_bbox = debug.get("tracking_bbox") 
+        x1, y1, x2, y2 = map(int, yolo_bbox)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(frame, "YOLO", (x1, y1 - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+    # --- Tracker BBox (blau, xywh!) ---
+    tracking_bbox = debug.get("tracking_bbox")
     if tracking_bbox:
-        x1, y1, x2, y2 = tracking_bbox  
-        cv2.rectangle(
-            frame,
-            (x1, y1),
-            (x2, y2),
-            (255, 0, 0),  # blau für Tracker
-            1
-        )
+        x, y, w, h = map(int, tracking_bbox)
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        cv2.putText(frame, "TRACKER", (x, y - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+    # --- ROI (gelb, das geht an YOLO) ---
+    roi_bbox = debug.get("roi_bbox")
+    if roi_bbox:
+        x, y, w, h = map(int, roi_bbox)
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
+        cv2.putText(frame, "ROI", (x, y - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
 
 
 # ============================================================
