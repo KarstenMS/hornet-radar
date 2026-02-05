@@ -205,7 +205,7 @@ class MotionGate:
 
         if ok:
             # 🔍 Geometrie prüfen
-            plausible = bbox_is_plausible(bbox, frame.shape[:2])
+            plausible = self.bbox_is_plausible(bbox, frame.shape[:2])
 
             if not plausible:
                 print("Tracker geometry invalid")
