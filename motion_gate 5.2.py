@@ -204,21 +204,7 @@ class MotionGate:
         ok, bbox = self.tracking_state.tracker.update(frame)
 
         if ok:
-            # 🔍 Geometrie prüfen
-            plausible = bbox_is_plausible(bbox, frame.shape[:2])
-
-            if not plausible:
-                print("Tracker geometry invalid")
-
-                if self.tracking_state.confirmed:
-                    event = self._finalize_event()
-                    self.tracking_state.reset()
-                    return event
-
-                self.tracking_state.reset()
-                return None
-
-            # ✅ alles okay
+            print("Tracker update successful")
             self.tracking_state.update(bbox)
 
             if not self.tracking_state.confirmed:
@@ -382,38 +368,3 @@ class MotionGate:
     def xywh_to_xyxy(self,bbox):
         x, y, w, h = bbox
         return (x, y, x + w, y + h)
-    
-    def bbox_is_plausible(bbox, frame_shape):
-        x, y, w, h = bbox
-        fh, fw = frame_shape
-
-        area = w * h
-        frame_area = fw * fh
-        area_ratio = area / frame_area
-
-        aspect = w / h if h > 0 else 0
-
-        # --- Area checks ---
-        if area_ratio > TRACKER_MAX_AREA_RATIO:
-            return False
-
-        if area_ratio < TRACKER_MIN_AREA_RATIO:
-            return False
-
-        # --- Aspect ratio ---
-        if aspect > TRACKER_MAX_ASPECT_RATIO or aspect < TRACKER_MIN_ASPECT_RATIO:
-            return False
-
-        # --- Edge hugging ---
-        margin_x = fw * TRACKER_EDGE_MARGIN_RATIO
-        margin_y = fh * TRACKER_EDGE_MARGIN_RATIO
-
-        if (
-            x <= margin_x or
-            y <= margin_y or
-            x + w >= fw - margin_x or
-            y + h >= fh - margin_y
-        ):
-            return False
-
-        return True

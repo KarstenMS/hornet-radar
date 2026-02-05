@@ -29,7 +29,3 @@ def vec_to_deg(v):
         return None
     x, y = v
     return (math.degrees(math.atan2(x, -y)) + 360) % 360
-
-def invert(v):
-    return (-v[0], -v[1])
-

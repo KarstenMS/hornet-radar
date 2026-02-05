@@ -32,8 +32,22 @@ TABLE_NAME = "sightings"
 # --- Motion_Gate Tracking settings ---
 TRACKER_TYPE = "AUTO"           # Available: "KCF", "CSRT", "MOSSE", "AUTO"
 FRAME_SKIP = 3                  # analyse only every 3rd frame (performance)
-TRACKER_TIMEOUT = 5.0           # Seconds without update → reset
 TRACKING_STABLE_FRAMES = 5      # Number of frames to be stable before running detection
+
+# --- Tracker Geometry Abort Thresholds (percent of frame) ---
+
+TRACKER_MAX_AREA_RATIO = 0.35      # >35% vom Frame = unmöglich für Hornisse
+TRACKER_MIN_AREA_RATIO = 0.0005    # <0.05% = Rauschen / Drift
+TRACKER_MAX_ASPECT_RATIO = 5.0     # extrem langgezogen
+TRACKER_MIN_ASPECT_RATIO = 0.2
+TRACKER_EDGE_MARGIN_RATIO = 0.02   # 2% Randtoleranz
+TRACKER_TIMEOUT = 5.0           # Seconds without update → reset
+
+# --- Tracker ↔ Detection consistency (Abort Criterion 2) ---
+TRACK_DET_MIN_IOU = 0.1                    # IoU below → inconsistent
+TRACK_DET_MAX_CENTER_DIST_RATIO = 0.05     # Relative to frame diagonal
+DETECTION_MIN_AREA_RATIO = 0.00005         # Ignore tiny YOLO detections
+
 
 MOTION_HISTORY = 300            # Amount of frames used for Backgroundmodel ( low = faster but vulnerable to noise, high = slower, but stable background)
 MOTION_VAR_THRESHOLD = 25       # Sensibility of motion detection
