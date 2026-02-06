@@ -130,8 +130,8 @@ def process_camera(motion_gate: MotionGate):
                 continue
 
             # Picamera returns RGB → OpenCV expects BGR
-            #if CAMERA_TYPE == "picamera2":
-            #    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            if CAMERA_TYPE == "picamera2":
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
             event, debug = motion_gate.process_frame(frame, FrameSource.CAMERA)
 
