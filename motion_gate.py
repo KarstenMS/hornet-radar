@@ -289,6 +289,7 @@ class MotionGate:
         detections = run_detection(roi, self.model)   
         print(f"Detection done, found {len(detections)} objects")
         debug["yolo_ran"] = True 
+        self.tracking_state.yolo_attempts += 1
 
         if not detections:
             return None
