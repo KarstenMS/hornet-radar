@@ -29,10 +29,14 @@ class Camera:
 
         self.picam2 = Picamera2()
         self.picam2.configure(
-            self.picam2.create_preview_configuration(
+            self.picam2.create_video_configuration(
+           # self.picam2.create_preview_configuration(
                 main={
                     "size": (CAMERA_WIDTH, CAMERA_HEIGHT),
                     "format": PICAM_FORMAT
+                },
+                controls={
+                    "FrameRate": CAMERA_FPS
                 }
             )
         )

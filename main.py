@@ -143,10 +143,7 @@ def process_camera(motion_gate: MotionGate):
             if SHOW_DEBUG_VIDEO:
                 display = frame.copy()
                 draw_debug_overlay(display, debug)
-                cv2.namedWindow("Hornet Debug", cv2.WINDOW_NORMAL)
-                cv2.resizeWindow("Hornet Debug", CAMERA_WIDTH, CAMERA_HEIGHT)
-
-                #cv2.imshow("Hornet Debug", display)
+                cv2.imshow("Hornet Debug", display)
 
                 if cv2.waitKey(1) & 0xFF == 27: 
                     break
