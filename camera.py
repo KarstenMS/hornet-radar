@@ -39,12 +39,6 @@ class Camera:
                 }
             )
         )
-        
-        self.picam2.set_controls({
-            "Sharpness": 1.1,
-            "NoiseReductionMode": 0,   # weniger Weichzeichnung
-            "Contrast": 1.05
-        })
 
         self.picam2.start()
         time.sleep(1)
@@ -59,7 +53,7 @@ class Camera:
             return frame if ret else None
 
         if self.camera_type == "picamera2":
-            return self.picam2.capture_array()
+            return self.picam2.capture_array("main")
 
     def release(self):
         if self.cap:
