@@ -263,6 +263,10 @@ class MotionGate:
     def _maybe_run_yolo(self, frame, debug):
         #print(f"Maybe Run Yolo")
 
+        # --- YOLO nur einmal ---
+        if self.tracking_state.detection_done:
+            return None
+
         # --- nur nach stabiler Trackingphase ---
         if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
             return None
@@ -270,10 +274,6 @@ class MotionGate:
         if self.tracking_state.yolo_attempts >= MAX_YOLO_ATTEMPTS:
             print("YOLO attempts exhausted → abort tracking")
             self.tracking_state.reset()
-            return None
-        
-         # --- YOLO nur einmal ---
-        if self.tracking_state.detection_done:
             return None
         
         # --- ROI aus aktueller Tracking-BBox ---

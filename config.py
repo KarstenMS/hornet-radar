@@ -5,9 +5,9 @@ Contains constants used throughout the project.
 import os
 
 # --- Raspberry Pi setup ---
-PI_ID = "PI_02"
+PI_ID = "PI_03"
 
-LATITUDE = 48.15413119783116     # Get the values from Google maps
+LATITUDE = 48.15423219783116     # Get the values from Google maps
 LONGITUDE = 11.459030279093017
 
 SHOW_DEBUG_VIDEO = True             # Shows Debug Video on the PI (requires GUI), default False
