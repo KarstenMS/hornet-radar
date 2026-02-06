@@ -144,7 +144,7 @@ def process_camera(motion_gate: MotionGate):
                 display = frame.copy()
                 draw_debug_overlay(display, debug)
                 cv2.namedWindow("Hornet Debug", cv2.WINDOW_NORMAL)
-                cv2.resizeWindow("Debug", CAMERA_WIDTH, CAMERA_HEIGHT)
+                cv2.resizeWindow("Hornet Debug", CAMERA_WIDTH, CAMERA_HEIGHT)
 
                 #cv2.imshow("Hornet Debug", display)
 
