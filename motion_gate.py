@@ -203,6 +203,8 @@ class MotionGate:
         # -------------------------------------------------
         ok, bbox = self.tracking_state.tracker.update(frame)
 
+
+
         if ok:
             # 🔍 Geometrie prüfen
             plausible = self.bbox_is_plausible(bbox, frame.shape[:2])
@@ -250,6 +252,11 @@ class MotionGate:
     def _maybe_run_yolo(self, frame, debug):
         print(f"Maybe Run Yolo")
 
+
+        print("TRACKING_BBOX RAW:", self.tracking_state.bbox)
+        print("ROI:", roi)
+        print("FRAME:", frame.shape)
+        
         # --- nur nach stabiler Trackingphase ---
         if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
             return None
