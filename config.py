@@ -68,7 +68,7 @@ CAMERA_FPS = 30
 WEBCAM_INDEX = 0
 
 # Picamera2 only
-PICAM_FORMAT = "XBGR8888" #"XRGB8888"
+PICAM_FORMAT = "XRGB8888"
 
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.85 # Optional: confidence threshold for detections
