@@ -36,6 +36,7 @@ TRACKING_STABLE_FRAMES = 5      # Number of frames to be stable before running d
 
 # --- Tracker Geometry Abort Thresholds (percent of frame) ---
 
+TRACKER_INIT_MAX_AREA_RATIO = 0.15  # 15% vom Frame
 TRACKER_MAX_AREA_RATIO = 0.35      # >35% vom Frame = unmöglich für Hornisse
 TRACKER_MIN_AREA_RATIO = 0.0005    # <0.05% = Rauschen / Drift
 TRACKER_MAX_ASPECT_RATIO = 5.0     # extrem langgezogen
@@ -71,6 +72,7 @@ PICAM_FORMAT = "RGB888"
 
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.85 # Optional: confidence threshold for detections
+MAX_YOLO_ATTEMPTS = 5
 
 # --- Save event ---
 THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails. Default: 192, 108 

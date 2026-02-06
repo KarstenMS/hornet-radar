@@ -186,6 +186,17 @@ class MotionGate:
         # -------------------------------------------------
         if motion_boxes and not self.tracking_state.active:
             bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
+
+            x, y, w, h = bbox
+            fh, fw = frame.shape[:2]
+
+            area_ratio = (w * h) / (fw * fh)
+
+            if area_ratio > TRACKER_INIT_MAX_AREA_RATIO:
+                print("Rejecting tracker init: motion bbox too large")
+                return None
+
+
             self.tracker = self._create_tracker()
             self.tracker.init(frame, bbox)
             print("TRACKER INIT BBOX:", bbox)
@@ -254,6 +265,11 @@ class MotionGate:
 
         # --- nur nach stabiler Trackingphase ---
         if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
+            return None
+        
+        if self.tracking_state.yolo_attempts >= MAX_YOLO_ATTEMPTS:
+            print("YOLO attempts exhausted → abort tracking")
+            self.tracking_state.reset()
             return None
         
          # --- YOLO nur einmal ---
