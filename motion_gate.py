@@ -161,7 +161,7 @@ class MotionGate:
         return event, debug
 
     def _update_motion(self, frame, debug):
-        print("Update Motion run")
+        #print("Update Motion run")
         fg = self.bg_subtractor.apply(frame)
         fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, self.kernel)
 
@@ -179,7 +179,7 @@ class MotionGate:
         return boxes
 
     def _update_tracking(self, frame, motion_boxes, debug):
-        print("Update Tracking run")
+        #print("Update Tracking run")
 
         # -------------------------------------------------
         # 1. Tracker starten
@@ -250,7 +250,7 @@ class MotionGate:
 
 
     def _maybe_run_yolo(self, frame, debug):
-        print(f"Maybe Run Yolo")
+        #print(f"Maybe Run Yolo")
 
         # --- nur nach stabiler Trackingphase ---
         if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
