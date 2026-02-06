@@ -72,7 +72,7 @@ PICAM_FORMAT = "RGB888"
 
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.85 # Optional: confidence threshold for detections
-MAX_YOLO_ATTEMPTS = 5
+MAX_YOLO_ATTEMPTS = 3
 
 # --- Save event ---
 THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails. Default: 192, 108 
