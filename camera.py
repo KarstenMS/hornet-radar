@@ -30,7 +30,6 @@ class Camera:
         self.picam2 = Picamera2()
         self.picam2.configure(
             self.picam2.create_video_configuration(
-           # self.picam2.create_preview_configuration(
                 main={
                     "size": (CAMERA_WIDTH, CAMERA_HEIGHT),
                     "format": PICAM_FORMAT
@@ -40,6 +39,13 @@ class Camera:
                 }
             )
         )
+        
+        self.picam2.set_controls({
+            "Sharpness": 1.1,
+            "NoiseReductionMode": 0,   # weniger Weichzeichnung
+            "Contrast": 1.05
+        })
+
         self.picam2.start()
         time.sleep(1)
 
