@@ -252,11 +252,6 @@ class MotionGate:
     def _maybe_run_yolo(self, frame, debug):
         print(f"Maybe Run Yolo")
 
-
-        print("TRACKING_BBOX RAW:", self.tracking_state.bbox)
-        print("ROI:", roi)
-        print("FRAME:", frame.shape)
-        
         # --- nur nach stabiler Trackingphase ---
         if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
             return None
@@ -269,8 +264,10 @@ class MotionGate:
         if self.tracking_state.bbox is None:
             return None
     
-        roi, offset = self._extract_roi(frame, self.tracking_state.bbox)
+        roi, offset, roi_box = self._extract_roi(frame, self.tracking_state.bbox)
+        debug["roi_bbox"] = roi_box
         if roi.size == 0:
+            debug["roi_bbox"] = None
             return None
         
         detections = run_detection(roi, self.model)   
@@ -383,8 +380,8 @@ class MotionGate:
         w = min(w, w_f - x)
         h = min(h, h_f - y)
         roi = frame[y:y + h, x:x + w]
-
-        return roi, (x, y)
+        roi_box = (x, y, x + w, y + h)
+        return roi, (x, y), roi_box
 
     def xywh_to_xyxy(self,bbox):
         x, y, w, h = bbox
