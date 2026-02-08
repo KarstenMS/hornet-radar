@@ -384,7 +384,7 @@ class MotionGate:
                 return cv2.TrackerKCF_create()
             if hasattr(cv2, "TrackerCSRT_create"):
                 print("Tracking started using: AUTO → CSRT")
-                return cv2.TrackerCSRT_create()
+                return 
 
         raise RuntimeError("No suitable OpenCV tracker available")
     
