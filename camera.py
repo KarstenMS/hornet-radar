@@ -48,6 +48,13 @@ class Camera:
         self.picam2.start()
         time.sleep(1)
 
+        self.picam2.set_controls({
+            controls.AfMode: controls.AfModeEnum.Continuous,
+            controls.AfSpeed: controls.AfSpeedEnum.Fast,
+            controls.AeEnable: True,
+            controls.AwbEnable: True,
+        })
+
     def read(self):
         """
         Frame interface
