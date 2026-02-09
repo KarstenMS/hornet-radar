@@ -13,7 +13,7 @@ LONGITUDE = 11.459030279093017
 SHOW_DEBUG_VIDEO = True             # Shows Debug Video on the PI (requires GUI), default False
 
 # --- Directories ---
-ROOT = "/home/hornet1/hornet-radar"
+ROOT = "/home/hornet/hornet-radar"
 
 MODEL_DIR = os.path.join(ROOT, "model", "yolov5s-all-data.pt")
 YOLO_DIR = os.path.join(ROOT, "yolov5")
