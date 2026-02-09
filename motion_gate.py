@@ -176,6 +176,7 @@ class MotionGate:
             boxes.append(cv2.boundingRect(c))
 
         debug["motion"] = bool(boxes)
+        debug["motion_boxes"] = boxes
         return boxes
 
     def _update_tracking(self, frame, motion_boxes, debug):
