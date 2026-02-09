@@ -49,11 +49,13 @@ class Camera:
         time.sleep(1)
 
         self.picam2.set_controls({
-            controls.AfMode: controls.AfModeEnum.Continuous,
-            controls.AfSpeed: controls.AfSpeedEnum.Fast,
-            controls.AeEnable: True,
-            controls.AwbEnable: True,
+            "AfMode": 2,     # Continuous
+            "AfSpeed": 1,    # Fast
+            "AeEnable": True,
+            "AwbEnable": True,
         })
+
+        print(self.picam2.capture_metadata().get("AfState"))
 
     def read(self):
         """
