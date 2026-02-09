@@ -48,6 +48,8 @@ TRACKER_TIMEOUT = 5.0           # Seconds without update → reset
 TRACK_DET_MIN_IOU = 0.1                    # IoU below → inconsistent
 TRACK_DET_MAX_CENTER_DIST_RATIO = 0.05     # Relative to frame diagonal
 DETECTION_MIN_AREA_RATIO = 0.00005         # Ignore tiny YOLO detections
+ROI_EXPAND_FACTOR = 0.4                    # 40% of Tracker on each side → ROI für YOLO
+
 
 
 MOTION_HISTORY = 300            # Amount of frames used for Backgroundmodel ( low = faster but vulnerable to noise, high = slower, but stable background)

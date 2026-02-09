@@ -393,13 +393,20 @@ class MotionGate:
         x, y, w, h = map(int, bbox)
         h_f, w_f = frame.shape[:2]
 
-        x = max(0, x)
-        y = max(0, y)
-        w = min(w, w_f - x)
-        h = min(h, h_f - y)
-        roi = frame[y:y + h, x:x + w]
-        roi_box = (x, y, x + w, y + h)
-        return roi, (x, y), roi_box
+        expand_w = int(w * ROI_EXPAND_FACTOR)
+        expand_h = int(h * ROI_EXPAND_FACTOR)
+
+        x1 = max(0, x - expand_w)
+        y1 = max(0, y - expand_h)
+        x2 = min(w_f, x + w + expand_w)
+        y2 = min(h_f, y + h + expand_h)
+
+        roi = frame[y1:y2, x1:x2]
+
+        offset = (x1, y1)
+        roi_box = (x1, y1, x2, y2)
+        
+        return roi, offset, roi_box
 
     def xywh_to_xyxy(self,bbox):
         x, y, w, h = bbox
