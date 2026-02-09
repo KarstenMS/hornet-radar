@@ -71,7 +71,7 @@ WEBCAM_INDEX = 0
 PICAM_FORMAT = "XRGB8888"  # XRGB8888 or RGB888
 
 # --- Detection Settings ---
-CONFIDENCE_THRESHOLD = 0.50 # Optional: confidence threshold for detections
+CONFIDENCE_THRESHOLD = 0.10 # Optional: confidence threshold for detections
 MAX_YOLO_ATTEMPTS = 3
 
 # --- Save event ---
