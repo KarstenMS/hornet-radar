@@ -61,7 +61,7 @@ MOTION_TRACK_LOST_TIMEOUT = 3.0 # Seconds, after which tracking stopps, if no mo
 CAMERA_TYPE = "picamera2"       # "picamera2" | "webcam"
 
 CAMERA_WIDTH = 1024 #1024 2048
-CAMERA_HEIGHT = 1024 #768 1536
+CAMERA_HEIGHT = 768 #768 1536
 CAMERA_FPS = 10
 
 # Webcam only
@@ -71,7 +71,7 @@ WEBCAM_INDEX = 0
 PICAM_FORMAT = "XRGB8888"  # XRGB8888 or RGB888
 
 # --- Detection Settings ---
-CONFIDENCE_THRESHOLD = 0.65 # Optional: confidence threshold for detections
+CONFIDENCE_THRESHOLD = 0.50 # Optional: confidence threshold for detections
 MAX_YOLO_ATTEMPTS = 3
 
 # --- Save event ---
