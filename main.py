@@ -172,6 +172,7 @@ def draw_debug_overlay(frame, debug: dict):
     # --- Text Infos ---
     line("Press ESC to exit")
     line(f"Source: {debug.get('source')}")
+    line(f"Confidence Threshold: {CONFIDENCE_THRESHOLD:.2f}")
     line(f"FPS: {debug.get('fps', 0):.1f}" if debug.get("fps") else "FPS: -")
 
     line(
