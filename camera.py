@@ -35,10 +35,6 @@ class Camera:
                     "size": (CAMERA_WIDTH, CAMERA_HEIGHT),
                     "format": PICAM_FORMAT
                 },
-                #raw={
-                #    "size": (2304, 1296),
-                #    "format": "SBGGR10"
-                #},
                 controls={
                     "FrameRate": CAMERA_FPS
                 }
