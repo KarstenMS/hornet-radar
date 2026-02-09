@@ -26,20 +26,25 @@ class Camera:
 
     def _init_picamera2(self):
         from picamera2 import Picamera2
+        from libcamera import controls
 
         self.picam2 = Picamera2()
-        self.picam2.configure(
-            self.picam2.create_video_configuration(
+
+        config = self.picam2.create_preview_configuration(
                 main={
                     "size": (CAMERA_WIDTH, CAMERA_HEIGHT),
                     "format": PICAM_FORMAT
+                },
+                raw={
+                    "size": (2304, 1296),
+                    "format": "SBGGR10"
                 },
                 controls={
                     "FrameRate": CAMERA_FPS
                 }
             )
-        )
-
+        
+        self.picam2.configure(config)
         self.picam2.start()
         time.sleep(1)
 
