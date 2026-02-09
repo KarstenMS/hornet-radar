@@ -68,7 +68,7 @@ CAMERA_FPS = 30
 WEBCAM_INDEX = 0
 
 # Picamera2 only
-PICAM_FORMAT = "SBGGR10"  #XRGB8888
+PICAM_FORMAT = "YUV420"  # "YUV420" for better performance, "XRGB8888" for better compatibility with OpenCV
 
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.65 # Optional: confidence threshold for detections
