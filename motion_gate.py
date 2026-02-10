@@ -395,15 +395,24 @@ class MotionGate:
     
     def _extract_roi(self, frame, bbox):
         x, y, w, h = map(int, bbox)
-        h_f, w_f = frame.shape[:2]
+        fh, fw = frame.shape[:2]
 
-        expand_w = int(w * ROI_EXPAND_FACTOR)
-        expand_h = int(h * ROI_EXPAND_FACTOR)
+        cx = x + w // 2
+        cy = y + h // 2
 
-        x1 = max(0, x - expand_w)
-        y1 = max(0, y - expand_h)
-        x2 = min(w_f, x + w + expand_w)
-        y2 = min(h_f, y + h + expand_h)
+        roi_w = int(w * (1 + 2 * ROI_EXPAND_FACTOR))
+        roi_h = int(h * (1 + 2 * ROI_EXPAND_FACTOR))
+
+        x1 = cx - roi_w // 2
+        y1 = cy - roi_h // 2
+        x2 = cx + roi_w // 2
+        y2 = cy + roi_h // 2
+
+        # clamp
+        x1 = max(0, x1)
+        y1 = max(0, y1)
+        x2 = min(fw, x2)
+        y2 = min(fh, y2)
 
         roi = frame[y1:y2, x1:x2]
 
@@ -441,12 +450,13 @@ class MotionGate:
         margin_x = fw * TRACKER_EDGE_MARGIN_RATIO
         margin_y = fh * TRACKER_EDGE_MARGIN_RATIO
 
-        if (
-            x <= margin_x or
-            y <= margin_y or
-            x + w >= fw - margin_x or
-            y + h >= fh - margin_y
-        ):
-            return False
+        if self.tracking_state.frames_tracked > 3:
+            if(
+                x <= margin_x or
+                y <= margin_y or
+                x + w >= fw - margin_x or
+                y + h >= fh - margin_y
+            ):
+                return False
 
-        return True
+            return True
