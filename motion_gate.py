@@ -81,6 +81,7 @@ class MotionGate:
     def _process_camera(self, frame, debug):
         event = None  
         self.source = "Camera"
+
         # --- FPS ---
         now = time.time()
         dt = now - self.last_time
@@ -89,22 +90,25 @@ class MotionGate:
         self.last_time = now
         debug["fps"] = self.fps
 
+        # --- Frame count & skipping ---
         self.frame_count += 1
         process_this_frame = (self.frame_count % FRAME_SKIP == 0)
 
+        # --- Motion Detection (only every N Frames) ---
+        motion_boxes = []
         if process_this_frame:
             motion_boxes = self._update_motion(frame, debug)
-            event = self._update_tracking(frame, motion_boxes, debug)
-            if event:
-                return event, debug
         else:
-            if self.tracking_state.active:
-                ok, bbox = self.tracking_state.tracker.update(frame)
-                if ok:
-                    self.tracking_state.update(bbox)
-                    debug["tracking"] = True
+            debug["motion"] = False
 
+        # --- Tracking (always)
+        event = self._update_tracking(frame, motion_boxes, debug)      
+        if event:
+            return event, debug
+        
+        # -- Yolo (if tracking, stable, and not done yet)
         self._maybe_run_yolo(frame, debug)
+
         return None, debug
 
 
