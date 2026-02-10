@@ -7,8 +7,8 @@ import os
 # --- Raspberry Pi setup ---
 PI_ID = "PI_03"
 
-LATITUDE = 48.15423219783116     # Get the values from Google maps
-LONGITUDE = 11.459030279093017
+LATITUDE = 48.15223219783116     # Get the values from Google maps
+LONGITUDE = 11.456030279093017
 
 SHOW_DEBUG_VIDEO = True             # Shows Debug Video on the PI (requires GUI), default False
 
