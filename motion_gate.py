@@ -429,34 +429,34 @@ class MotionGate:
         x, y, w, h = bbox
         fh, fw = frame_shape
 
-        area = w * h
-        frame_area = fw * fh
-        area_ratio = area / frame_area
-
+        area_ratio = (w * h) / (fw * fh)
         aspect = w / h if h > 0 else 0
 
-        # --- Area checks ---
+
+        # --- always Area checks ---
         if area_ratio > TRACKER_MAX_AREA_RATIO:
             return False
 
-        if area_ratio < TRACKER_MIN_AREA_RATIO:
-            return False
-
-        # --- Aspect ratio ---
-        if aspect > TRACKER_MAX_ASPECT_RATIO or aspect < TRACKER_MIN_ASPECT_RATIO:
-            return False
-
-        # --- Edge hugging ---
-        margin_x = fw * TRACKER_EDGE_MARGIN_RATIO
-        margin_y = fh * TRACKER_EDGE_MARGIN_RATIO
-
-        if self.tracking_state.frames_tracked > 3:
-            if(
-                x <= margin_x or
-                y <= margin_y or
-                x + w >= fw - margin_x or
-                y + h >= fh - margin_y
-            ):
+        # --- Aspect ratio after confirmation---
+        if self.tracking_state.confirmed:
+            if area_ratio < TRACKER_MIN_AREA_RATIO:
                 return False
 
-            return True
+            if aspect > TRACKER_MAX_ASPECT_RATIO or aspect < TRACKER_MIN_ASPECT_RATIO:
+                return False
+
+            # --- Edge hugging ---
+            margin_x = fw * TRACKER_EDGE_MARGIN_RATIO
+            margin_y = fh * TRACKER_EDGE_MARGIN_RATIO
+
+
+            if self.tracking_state.frames_tracked > 3:
+                if(
+                    x <= margin_x or
+                    y <= margin_y or
+                    x + w >= fw - margin_x or
+                    y + h >= fh - margin_y
+                ):
+                    return False
+
+        return True
