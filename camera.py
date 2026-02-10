@@ -30,13 +30,21 @@ class Camera:
 
         self.picam2 = Picamera2()
 
-        config = self.picam2.create_preview_configuration(
+        sensor_size = self.picam2.sensor_resolution
+        full_crop = (0, 0, sensor_size[0], sensor_size[1])
+
+        config = self.picam2.create_video_configuration(
                 main={
                     "size": (CAMERA_WIDTH, CAMERA_HEIGHT),
                     "format": PICAM_FORMAT
                 },
                 controls={
-                    "FrameRate": CAMERA_FPS
+                    "FrameRate": CAMERA_FPS,
+                    "ScalerCrop": full_crop,
+                    "AfMode": 2,     # Continuous
+                    "AfSpeed": 1,    # Fast
+                    "AeEnable": True,
+                    "AwbEnable": True,
                 }
             )
         
@@ -44,13 +52,6 @@ class Camera:
         self.picam2.start()
         time.sleep(1)
 
-        # Set autofocus and autoexposure
-        self.picam2.set_controls({
-            "AfMode": 2,     # Continuous
-            "AfSpeed": 1,    # Fast
-            "AeEnable": True,
-            "AwbEnable": True,
-        })
 
         print(self.picam2.capture_metadata().get("AfState"))
 
