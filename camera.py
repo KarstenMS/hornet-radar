@@ -26,34 +26,41 @@ class Camera:
 
     def _init_picamera2(self):
         from picamera2 import Picamera2
-        from libcamera import controls
+        import time
 
         self.picam2 = Picamera2()
 
         sensor_size = self.picam2.sensor_resolution
         full_crop = (0, 0, sensor_size[0], sensor_size[1])
 
+        # Basis-Controls (always)
+        controls_dict = {
+            "FrameRate": CAMERA_FPS,
+            "ScalerCrop": full_crop,
+            "AeEnable": True,
+            "AwbEnable": True,
+        }
+
+        # Get Controls and check for Autofocus support
+        available_controls = self.picam2.camera_controls
+
+        # Set Autofocus to continuous if supported, otherwise fixed focus (default)
+        if "AfMode" in available_controls:
+            controls_dict["AfMode"] = 2      # Continuous
+            if "AfSpeed" in available_controls:
+                controls_dict["AfSpeed"] = 1  # Fast
+
         config = self.picam2.create_video_configuration(
-                main={
-                    "size": (CAMERA_WIDTH, CAMERA_HEIGHT),
-                    "format": PICAM_FORMAT
-                },
-                controls={
-                    "FrameRate": CAMERA_FPS,
-                    "ScalerCrop": full_crop,
-                    "AfMode": 2,     # Continuous
-                    "AfSpeed": 1,    # Fast
-                    "AeEnable": True,
-                    "AwbEnable": True,
-                }
-            )
-        
+            main={
+                "size": (CAMERA_WIDTH, CAMERA_HEIGHT),
+                "format": PICAM_FORMAT,
+            },
+            controls=controls_dict
+        )
+
         self.picam2.configure(config)
         self.picam2.start()
         time.sleep(1)
-
-
-        print(self.picam2.capture_metadata().get("AfState"))
 
     def read(self):
         """
