@@ -291,7 +291,7 @@ class MotionGate:
         if not detections:
             return None
        
-        best_det = frame_detections[0]   
+        best_det = detections[0]   
         print(f"Hornet detected!!!")
 
         self.tracking_state.confirmed = True
