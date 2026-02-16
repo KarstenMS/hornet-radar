@@ -186,7 +186,7 @@ def draw_debug_overlay(frame, debug: dict):
     )
 
     line(f"Frames tracked: {debug.get('frames_tracked', 0)}")
-    line(f"ROI → YOLO: {'YES' if debug.get('yolo_ran') else 'NO'}")
+    line(f"YOLO on ROI: {'YES' if debug.get('yolo_ran') else 'NO'}")
 
     plausible = debug.get("bbox_plausible")
     if plausible is not None:

@@ -281,39 +281,16 @@ class MotionGate:
             self.tracking_state.reset()
             return None
         
-        # --- ROI aus aktueller Tracking-BBox ---
-        if self.tracking_state.bbox is None:
-            return None
-    
-        roi, offset, roi_box = self._extract_roi(frame, self.tracking_state.bbox)
-        debug["roi_bbox"] = roi_box
-        if roi.size == 0:
-            debug["roi_bbox"] = None
-            return None
-        
-        detections = run_detection(roi, self.model)   
+        # --- YOLO auf FULL FRAME ---
+        detections = run_detection(frame, self.model)
+
         print(f"Detection done, found {len(detections)} objects")
-        debug["yolo_ran"] = True 
+        debug["yolo_ran"] = True
         self.tracking_state.yolo_attempts += 1
 
         if not detections:
             return None
        
-        # --- YOLO BBox → Frame-Koordinaten ---
-        frame_detections = []
-        print("Detections:", detections)
-        for d in detections:
-            x1, y1, x2, y2 = d["bbox"]
-            frame_detections.append({
-                **d,
-                "bbox": (
-                int(x1 + offset[0]),
-                int(y1 + offset[1]),
-                int(x2 + offset[0]),
-                int(y2 + offset[1]),
-                )
-            })
-
         best_det = frame_detections[0]   
         print(f"Hornet detected!!!")
 
@@ -330,7 +307,7 @@ class MotionGate:
 
         # ✅ Bewegung weiter sammeln
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
-        self.tracking_state.detections = frame_detections
+        self.tracking_state.detections = detections
         
         debug["yolo_bbox"] = best_det["bbox"]
 
