@@ -186,7 +186,7 @@ def draw_debug_overlay(frame, debug: dict):
     )
 
     line(f"Frames tracked: {debug.get('frames_tracked', 0)}")
-    line(f"YOLO on ROI: {'YES' if debug.get('yolo_ran') else 'NO'}")
+    line(f"YOLO run: {'YES' if debug.get('yolo_ran') else 'NO'}")
 
     plausible = debug.get("bbox_plausible")
     if plausible is not None:
@@ -211,14 +211,7 @@ def draw_debug_overlay(frame, debug: dict):
         cv2.putText(frame, "TRACKER", (x, y - 5),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
-    # --- ROI (gelb, das geht an YOLO) ---
-    roi_bbox = debug.get("roi_bbox")
-    if roi_bbox:
-        x, y, w, h = map(int, roi_bbox)
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
-        cv2.putText(frame, "ROI", (x, y - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-        
+     
     # --- Motion Boxes (rot, gestrichelt) ---
     motion_boxes = debug.get("motion_boxes", [])
     for (x, y, w, h) in motion_boxes:

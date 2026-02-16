@@ -376,33 +376,6 @@ class MotionGate:
 
         raise RuntimeError("No suitable OpenCV tracker available")
     
-    def _extract_roi(self, frame, bbox):
-        x, y, w, h = map(int, bbox)
-        fh, fw = frame.shape[:2]
-
-        cx = x + w // 2
-        cy = y + h // 2
-
-        roi_w = int(w * (1 + 2 * ROI_EXPAND_FACTOR))
-        roi_h = int(h * (1 + 2 * ROI_EXPAND_FACTOR))
-
-        x1 = cx - roi_w // 2
-        y1 = cy - roi_h // 2
-        x2 = cx + roi_w // 2
-        y2 = cy + roi_h // 2
-
-        # clamp
-        x1 = max(0, x1)
-        y1 = max(0, y1)
-        x2 = min(fw, x2)
-        y2 = min(fh, y2)
-
-        roi = frame[y1:y2, x1:x2]
-
-        offset = (x1, y1)
-        roi_box = (x1, y1, x2, y2)
-        
-        return roi, offset, roi_box
 
     def xywh_to_xyxy(self,bbox):
         x, y, w, h = bbox
