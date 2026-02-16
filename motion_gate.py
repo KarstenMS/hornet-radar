@@ -229,12 +229,18 @@ class MotionGate:
                 print("Tracker geometry invalid")
 
                 if self.tracking_state.confirmed:
-                    event = self._finalize_event()
-                    self.tracking_state.reset()
-                    return event
+                    # Nur finalisieren, wenn wir genug Frames nach Confirmation hatten
+                    if self.tracking_state.frames_since_confirmed >= MIN_POST_CONFIRM_FRAMES:
+                        event = self._finalize_event()
+                        self.tracking_state.reset()
+                        return event
+                    else:
+                        # Noch nicht genug Daten gesammelt → ignorieren
+                        return None
 
                 self.tracking_state.reset()
                 return None
+
 
             # ✅ alles okay
             self.tracking_state.update(bbox)
