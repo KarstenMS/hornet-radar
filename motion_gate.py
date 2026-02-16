@@ -348,6 +348,7 @@ class MotionGate:
         # --- Compute movement vectors ---
         approach_vec = vector_from_points(centers, mode="approach")
         departure_vec = vector_from_points(centers, mode="departure")
+        print(f"Approach vector: {approach_vec}, Departure vector: {departure_vec}")
 
 
         return DetectionEvent(

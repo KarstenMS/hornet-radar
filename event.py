@@ -46,7 +46,7 @@ class DetectionEvent:
         self.tracking_frames = tracking_frames
         self.frame_shape = frame_shape
 
-        # === Future extensions ===
+        # === Approach & Departure vectors ===
         self.trajectory: List[Tuple[int, int]] = []
         self.approach_vec = approach_vec
         self.departure_vec = departure_vec
