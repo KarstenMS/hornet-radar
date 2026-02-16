@@ -226,7 +226,11 @@ class MotionGate:
             plausible = self.bbox_is_plausible(bbox, frame.shape[:2])
 
             if not plausible:
-                print("Tracker geometry invalid")
+
+                self.tracking_state.invalid_frames += 1
+
+                if self.tracking_state.invalid_frames > TRACKER_MAX_INVALID_FRAMES:
+                     print("Tracker lost > abort")
 
                 if self.tracking_state.confirmed:
                     # Nur finalisieren, wenn wir genug Frames nach Confirmation hatten
@@ -243,6 +247,7 @@ class MotionGate:
 
 
             # ✅ alles okay
+            self.tracking_state.invalid_frames = 0
             self.tracking_state.update(bbox)
 
             if not self.tracking_state.confirmed:
@@ -299,6 +304,16 @@ class MotionGate:
        
         best_det = detections[0]   
         print(f"Hornet detected!!!")
+
+        # Tracker neu auf YOLO-Box setzen
+        new_bbox = best_det["bbox"]
+        x1, y1, x2, y2 = new_bbox
+        w = x2 - x1
+        h = y2 - y1
+
+        self.tracking_state.tracker = self._create_tracker()
+        self.tracking_state.tracker.init(frame, (x1, y1, w, h))
+        self.tracking_state.bbox = (x1, y1, w, h)
 
         self.tracking_state.confirmed = True
         self.tracking_state.detection_done = True

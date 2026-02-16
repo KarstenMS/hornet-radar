@@ -18,6 +18,7 @@ class TrackingState:
             self.bbox = None
             self.centers = []
             self.frames_tracked = 0
+            self.invalid_frames = 0
 
             # --- Timing ---
             self.start_frame_ts = None

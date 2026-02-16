@@ -5,15 +5,15 @@ Contains constants used throughout the project.
 import os
 
 # --- Raspberry Pi setup ---
-PI_ID = "PI_03"
+PI_ID = "PI_05"
 
 LATITUDE = 48.15223219783116     # Get the values from Google maps
-LONGITUDE = 11.456030279093017
+LONGITUDE = 11.436030279093017
 
 SHOW_DEBUG_VIDEO = True             # Shows Debug Video on the PI (requires GUI), default False
 
 # --- Directories ---
-ROOT = "/home/hornet/hornet-radar"
+ROOT = "/home/hornet1/hornet-radar"
 
 MODEL_DIR = os.path.join(ROOT, "model", "yolov5s-all-data.pt")
 YOLO_DIR = os.path.join(ROOT, "yolov5")
@@ -42,7 +42,9 @@ TRACKER_MIN_AREA_RATIO = 0.0005    # <0.05% = Rauschen / Drift
 TRACKER_MAX_ASPECT_RATIO = 5.0     # extrem langgezogen
 TRACKER_MIN_ASPECT_RATIO = 0.2
 TRACKER_EDGE_MARGIN_RATIO = 0.02   # 2% Randtoleranz
-TRACKER_TIMEOUT = 5.0           # Seconds without update → reset
+TRACKER_TIMEOUT = 5.0              # Seconds without update → reset
+TRACKER_MAX_INVALID_FRAMES = 5     # Max consecutive implausible frames before aborting tracking
+
 
 # --- Tracker ↔ Detection consistency (Abort Criterion 2) ---
 TRACK_DET_MIN_IOU = 0.1                    # IoU below → inconsistent
