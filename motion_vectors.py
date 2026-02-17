@@ -1,6 +1,6 @@
 import math
 from typing import List, Optional, Tuple
-from config import TRACKING_STABLE_FRAMES
+from config import VECTOR_WINDOW
 
 def vector_from_points(
     points: List[Tuple[float, float]],
@@ -15,17 +15,19 @@ def vector_from_points(
     Returns None if movement is too small.
     """
 
-    if len(points) < 2:
+    if len(points) < 2 or len(points) < VECTOR_WINDOW:
         return None
 
     if mode == "approach":
-        # Take first n frames (or all if < TRACKING_STABLE_FRAMES)
-        sub_points = points[:min(len(points), TRACKING_STABLE_FRAMES)]
+        # Take first n frames (or all if < VECTOR_WINDOW)
+        sub_points = points[:VECTOR_WINDOW]
     elif mode == "departure":
         # Take last n frames
-        sub_points = points[-min(len(points), TRACKING_STABLE_FRAMES):]
+        sub_points = points[-VECTOR_WINDOW:]
     else:
         raise ValueError(f"Unknown mode {mode}")
+    
+    print(f"Calculating {mode} vector from points: {sub_points}")
 
     x0, y0 = sub_points[0]
     x1, y1 = sub_points[-1]

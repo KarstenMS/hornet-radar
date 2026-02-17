@@ -80,3 +80,6 @@ MAX_YOLO_ATTEMPTS = 3
 
 # --- Save event ---
 THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails. Default: 192, 108 
+
+# --- Vector settings ---
+VECTOR_WINDOW = 5                   # Number of frames for approach/departure vector calculation
