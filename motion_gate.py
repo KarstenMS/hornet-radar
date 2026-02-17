@@ -288,12 +288,7 @@ class MotionGate:
 
         # --- nur nach stabiler Trackingphase ---
         if not self.tracking_state.frames_tracked >= TRACKING_STABLE_FRAMES:
-            print("Tracking not stable yet")
             return None
-        
-        #if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
-        #    print("Tracking not stable yet")
-        #    return None
         
         if self.tracking_state.yolo_attempts >= MAX_YOLO_ATTEMPTS:
             print("YOLO attempts exhausted → abort tracking")
