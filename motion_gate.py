@@ -228,7 +228,7 @@ class MotionGate:
                 self.tracking_state.invalid_frames += 1
 
                 if self.tracking_state.invalid_frames > TRACKER_MAX_INVALID_FRAMES:
-                     print("Tracker lost > abort")
+                     print("Tracker lost >> abort")
 
                 if self.tracking_state.confirmed:
                     # Nur finalisieren, wenn wir genug Frames nach Confirmation hatten
@@ -287,7 +287,7 @@ class MotionGate:
             return None
 
         # --- nur nach stabiler Trackingphase ---
-        if not self.tracking_state.frames_tracked >= TRACKING_STABLE_FRAMES:
+        if  self.tracking_state.frames_tracked < TRACKING_STABLE_FRAMES:
             return None
         
         if self.tracking_state.yolo_attempts >= MAX_YOLO_ATTEMPTS:
@@ -339,7 +339,6 @@ class MotionGate:
         self.tracking_state.confirmed_yolo_bbox = best_det["bbox"] 
 
         # ✅ Bewegung weiter sammeln
-        self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.detections = detections
 
         # ✅ Debug Labels und Confidence speichern
@@ -352,10 +351,9 @@ class MotionGate:
     def _finalize_event(self) -> DetectionEvent:
         print("Finalize Event")
         
-
         # --- Extract data from tracking state ---
-        centers = self.tracking_state.confirmed_centers
-  
+        centers = self.tracking_state.centers
+
         # --- Compute movement vectors ---
         approach_vec = vector_from_points(centers, mode="approach")
         departure_vec = vector_from_points(centers, mode="departure")

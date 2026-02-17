@@ -39,7 +39,6 @@ class TrackingState:
             self.stable_bbox = None
             self.confirmed_bbox = None
             self.confirmed_yolo_bbox = None
-            self.confirmed_centers = []
             self.detections = []
             self.last_good_frame = None
             self.last_good_frame_shape = None

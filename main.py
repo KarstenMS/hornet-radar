@@ -237,15 +237,6 @@ def draw_debug_overlay(frame, debug: dict):
             (0, 0, 0),
             2
         )
-
-        # --- YOLO BBox (grün, xyxy) ---
-        #yolo_bbox = debug.get("yolo_bbox")
-        #if yolo_bbox and not confirmed:
-        #    x1, y1, x2, y2 = map(int, yolo_bbox)
-        #    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        #    cv2.putText(frame, "YOLO", (x1, y1 - 5),
-        #                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            
      
     # --- Motion Boxes (rot, gestrichelt) ---
     motion_boxes = debug.get("motion_boxes", [])
