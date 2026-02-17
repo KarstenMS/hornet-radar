@@ -227,8 +227,9 @@ class MotionGate:
 
                 self.tracking_state.invalid_frames += 1
 
-                if self.tracking_state.invalid_frames > TRACKER_MAX_INVALID_FRAMES:
+                if self.tracking_state.invalid_frames >= TRACKER_MAX_INVALID_FRAMES:
                      print("Tracker lost > abort")
+                     return None 
 
                 if self.tracking_state.confirmed:
                     # Nur finalisieren, wenn wir genug Frames nach Confirmation hatten
