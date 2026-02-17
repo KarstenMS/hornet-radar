@@ -117,7 +117,7 @@ class MotionGate:
         self.source = "Video"
         debug["motion"] = False
         debug["tracking"] = False
-        debug["confirmed"] = False
+        #debug["confirmed"] = False
 
         detections = None
         self.frame_count += 1
