@@ -117,7 +117,7 @@ class MotionGate:
         self.source = "Video"
         debug["motion"] = False
         debug["tracking"] = False
-        #debug["confirmed"] = False
+        debug["confirmed"] = False
 
         detections = None
         self.frame_count += 1
@@ -330,12 +330,13 @@ class MotionGate:
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.detections = detections
 
-        # ✅ Labels und Confidence speichern
-        CLASS_MAP = {
-            0: "AH",
-            1: "EH"
-        }
-        label = CLASS_MAP.get(best_det["class_id"], "?")
+        # ✅ Debug Labels und Confidence speichern
+
+        if best_det["class_id"] == 1:
+            label = "AH"
+        else:
+            label = "EH"
+
         conf = best_det["confidence"]
 
         debug["confirmed"] = True
