@@ -83,3 +83,4 @@ THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails. Default: 192, 108
 
 # --- Vector settings ---
 VECTOR_WINDOW = 5                   # Number of frames for approach/departure vector calculation
+VEKTOR_MIN_DISTANCE = 10.0          # Minimum pixel distance for a valid vector (to filter out noise)

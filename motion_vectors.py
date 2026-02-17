@@ -1,10 +1,9 @@
 import math
 from typing import List, Optional, Tuple
-from config import VECTOR_WINDOW
+from config import VECTOR_WINDOW, VEKTOR_MIN_DISTANCE
 
 def vector_from_points(
     points: List[Tuple[float, float]],
-    min_distance: float = 5.0,
     mode: str = "approach"  # "approach" oder "departure"
 ) -> Optional[Tuple[float, float]]:
     """
@@ -36,7 +35,7 @@ def vector_from_points(
     dy = y1 - y0
 
     length = math.hypot(dx, dy)
-    if length < min_distance:
+    if length < VEKTOR_MIN_DISTANCE:
         return None
 
     return (dx / length, dy / length)
