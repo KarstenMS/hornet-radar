@@ -37,5 +37,12 @@ def vector_from_points(
     length = math.hypot(dx, dy)
     if length < VEKTOR_MIN_DISTANCE:
         return None
+    
+    vx = dx / length
+    vy = dy / length
 
-    return (dx / length, dy / length)
+    if mode == "approach":
+        vx = -vx
+        vy = -vy
+
+    return vx, vy

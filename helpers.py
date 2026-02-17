@@ -1,7 +1,7 @@
 """
 Utility functions for Hornet Radar project.
 """
-import math
+
 import os
 import cv2
 import datetime
@@ -24,8 +24,3 @@ def ensure_directories(*dirs):
     for d in dirs:
         os.makedirs(d, exist_ok=True)
 
-def vec_to_deg(v):
-    if not v:
-        return None
-    x, y = v
-    return (math.degrees(math.atan2(x, -y)) + 360) % 360
