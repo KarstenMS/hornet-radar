@@ -318,7 +318,7 @@ class MotionGate:
         self.tracking_state.confirmed = True
         self.tracking_state.detection_done = True
 
-        # ✅ DAS Frame, auf dem YOLO lief
+           # ✅ DAS Frame, auf dem YOLO lief
         self.tracking_state.confirmed_frame = frame
         self.tracking_state.confirmed_frame_shape = frame.shape
 
@@ -329,11 +329,19 @@ class MotionGate:
         # ✅ Bewegung weiter sammeln
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.detections = detections
-        
-        debug["yolo_bbox"] = best_det["bbox"]
 
-        print("YOLO CONFIRMED BBOX:", best_det["bbox"])
-        print("TRACKER BBOX (live):", self.tracking_state.bbox)
+        # ✅ Labels und Confidence speichern
+        CLASS_MAP = {
+            0: "AH",
+            1: "EH"
+        }
+        label = CLASS_MAP.get(best_det["class"], "?")
+        conf = best_det["confidence"]
+
+        debug["confirmed"] = True
+        debug["confirmed_label"] = label
+        debug["confirmed_conf"] = conf
+        debug["yolo_bbox"] = best_det["bbox"]
 
         return None
 
@@ -383,12 +391,12 @@ class MotionGate:
             return cv2.TrackerMOSSE_create()
 
         if t == "AUTO":
+            if hasattr(cv2, "TrackerCSRT_create"):
+                print("Tracking started using: AUTO → CSRT")
+                return cv2.TrackerCSRT_create()
             if hasattr(cv2, "TrackerKCF_create"):
                 print("Tracking started using: AUTO → KCF")
                 return cv2.TrackerKCF_create()
-            if hasattr(cv2, "TrackerCSRT_create"):
-                print("Tracking started using: AUTO → CSRT")
-                return 
 
         raise RuntimeError("No suitable OpenCV tracker available")
     

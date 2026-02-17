@@ -195,21 +195,47 @@ def draw_debug_overlay(frame, debug: dict):
             (0, 255, 0) if plausible else (0, 0, 255)
         )
 
-    # --- YOLO BBox (grün, xyxy) ---
-    yolo_bbox = debug.get("yolo_bbox")
-    if yolo_bbox:
-        x1, y1, x2, y2 = map(int, yolo_bbox)
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(frame, "YOLO", (x1, y1 - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-    # --- Tracker BBox (blau, xywh!) ---
+    # --- Tracker / Confirmed Box ---
     tracking_bbox = debug.get("tracking_bbox")
+    confirmed = debug.get("confirmed", False)
+
     if tracking_bbox:
         x, y, w, h = map(int, tracking_bbox)
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-        cv2.putText(frame, "TRACKER", (x, y - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+        if confirmed:
+            label = debug.get("confirmed_label", "?")
+            conf = debug.get("confirmed_conf", 0.0)
+
+            # Farbe je nach Spezies
+            if label == "AH":
+                color = (0, 0, 255)      # Rot
+            else:
+                color = (0, 255, 0)      # Grün (EH)
+
+            text = f"{label} {conf:.2f}"
+
+        else:
+            color = (255, 0, 0)          # Blau
+            text = "TRACKER"
+
+        # Bounding Box
+        cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+
+        # Text Hintergrund
+        (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+        cv2.rectangle(frame, (x, y - th - 6), (x + tw + 4, y), color, -1)
+
+        # Text
+        cv2.putText(
+            frame,
+            text,
+            (x + 2, y - 4),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+            2
+        )
+
 
      
     # --- Motion Boxes (rot, gestrichelt) ---
