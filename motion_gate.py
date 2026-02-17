@@ -117,6 +117,7 @@ class MotionGate:
         self.source = "Video"
         debug["motion"] = False
         debug["tracking"] = False
+        debug["confirmed"] = False
 
         detections = None
         self.frame_count += 1
@@ -265,7 +266,7 @@ class MotionGate:
         # -------------------------------------------------
         # 3. Tracker verloren → Event ggf. finalisieren
         # -------------------------------------------------
-        print("Tracker lost")
+        print("No Tracking")
 
         if self.tracking_state.confirmed:
             event = self._finalize_event()
@@ -277,7 +278,6 @@ class MotionGate:
 
 
     def _maybe_run_yolo(self, frame, debug):
-        #print(f"Maybe Run Yolo")
 
         # --- YOLO nur einmal ---
         if self.tracking_state.detection_done:
