@@ -287,7 +287,7 @@ class MotionGate:
             return None
 
         # --- nur nach stabiler Trackingphase ---
-        if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
+        if self.tracking_state.frames_tracked >= TRACKING_STABLE_FRAMES:
             return None
         
         if self.tracking_state.yolo_attempts >= MAX_YOLO_ATTEMPTS:
@@ -341,10 +341,6 @@ class MotionGate:
         # ✅ Bewegung weiter sammeln
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.detections = detections
-
-        # ✅ Debug Labels und Confidence speichern
-
-
 
         return None
 
