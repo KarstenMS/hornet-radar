@@ -27,7 +27,7 @@ def vector_from_points(
     else:
         raise ValueError(f"Unknown mode {mode}")
     
-    print(f"Calculating {mode} vector from points: {sub_points}")
+    print(f"Calculating {mode} vector from points: {sub_points} out of {points} total points")
 
     x0, y0 = sub_points[0]
     x1, y1 = sub_points[-1]
