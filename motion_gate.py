@@ -335,7 +335,7 @@ class MotionGate:
             0: "AH",
             1: "EH"
         }
-        label = CLASS_MAP.get(best_det["class"], "?")
+        label = CLASS_MAP.get(best_det["class_id"], "?")
         conf = best_det["confidence"]
 
         debug["confirmed"] = True
