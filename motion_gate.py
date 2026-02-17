@@ -227,9 +227,8 @@ class MotionGate:
 
                 self.tracking_state.invalid_frames += 1
 
-                if self.tracking_state.invalid_frames >= TRACKER_MAX_INVALID_FRAMES:
+                if self.tracking_state.invalid_frames > TRACKER_MAX_INVALID_FRAMES:
                      print("Tracker lost > abort")
-                     return None 
 
                 if self.tracking_state.confirmed:
                     # Nur finalisieren, wenn wir genug Frames nach Confirmation hatten
@@ -288,9 +287,13 @@ class MotionGate:
             return None
 
         # --- nur nach stabiler Trackingphase ---
-        if self.tracking_state.invalid_frames >= TRACKER_MAX_INVALID_FRAMES:
-            print("Tracker lost > abort")
+        if not self.tracking_state.frames_tracked >= TRACKING_STABLE_FRAMES:
+            print("Tracking not stable yet")
             return None
+        
+        #if not self.tracking_state.is_stable(TRACKING_STABLE_FRAMES):
+        #    print("Tracking not stable yet")
+        #    return None
         
         if self.tracking_state.yolo_attempts >= MAX_YOLO_ATTEMPTS:
             print("YOLO attempts exhausted → abort tracking")
@@ -343,6 +346,10 @@ class MotionGate:
         # ✅ Bewegung weiter sammeln
         self.tracking_state.confirmed_centers = list(self.tracking_state.centers)
         self.tracking_state.detections = detections
+
+        # ✅ Debug Labels und Confidence speichern
+
+
 
         return None
 
