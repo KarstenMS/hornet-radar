@@ -287,7 +287,8 @@ class MotionGate:
             return None
 
         # --- nur nach stabiler Trackingphase ---
-        if self.tracking_state.frames_tracked >= TRACKING_STABLE_FRAMES:
+        if self.tracking_state.invalid_frames >= TRACKER_MAX_INVALID_FRAMES:
+            print("Tracker lost > abort")
             return None
         
         if self.tracking_state.yolo_attempts >= MAX_YOLO_ATTEMPTS:

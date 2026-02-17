@@ -77,3 +77,13 @@ class TrackingState:
         self.end_frame_ts = time.time()
         self.dwell_time = self.end_frame_ts - self.start_frame_ts
         self.last_update = self.end_frame_ts
+
+
+    # =====================
+    # Helper
+    # =====================
+    def is_stable(self, min_frames: int) -> bool:
+        return self.frames_tracked >= min_frames
+
+    def is_timed_out(self, timeout_s: float) -> bool:
+        return self.active and (time.time() - self.last_update) > timeout_s
