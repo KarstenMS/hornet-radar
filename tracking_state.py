@@ -29,15 +29,14 @@ class TrackingState:
 
            # --- YOLO / Confirmation ---
             self.confirmed: bool = False
+            self.confirmed_label = None
+            self.confirmed_confidence = None
             self.detection_done: bool = False
             self.yolo_attempts = 0
-
             self.confirmed_frame = None
             self.confirmed_frame_shape = None
             self.confirmed_frame_ts = None
             self.stable_bbox = None
-
-
             self.confirmed_bbox = None
             self.confirmed_yolo_bbox = None
             self.confirmed_centers = []

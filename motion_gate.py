@@ -218,7 +218,6 @@ class MotionGate:
         # 2. Tracker updaten
         # -------------------------------------------------
         ok, bbox = self.tracking_state.tracker.update(frame)
-        debug["confirmed"] = self.tracking_state.confirmed
 
         if ok:
             # 🔍 Geometrie prüfen
@@ -258,6 +257,12 @@ class MotionGate:
             debug["tracking"] = True
             debug["frames_tracked"] = self.tracking_state.frames_tracked
             debug["tracking_bbox"] = tuple(map(int, bbox))
+            debug["tracking"] = self.tracking_state.active
+            debug["confirmed"] = self.tracking_state.confirmed
+
+            if self.tracking_state.confirmed:
+                debug["confirmed_label"] = self.tracking_state.confirmed_label
+                debug["confirmed_conf"] = self.tracking_state.confirmed_confidence
 
             return None
 
@@ -301,7 +306,14 @@ class MotionGate:
             return None
        
         best_det = detections[0]   
-        print(f"Hornet detected!!!")
+        if best_det["class_id"] == 1:
+            label = "AH"
+        else:
+            label = "EH"
+
+        conf = best_det["confidence"]
+
+        print(f"Hornet detected!!! Label: {label}, Confidence: {conf}")
 
         # Tracker neu auf YOLO-Box setzen
         new_bbox = best_det["bbox"]
@@ -315,6 +327,8 @@ class MotionGate:
 
         self.tracking_state.confirmed = True
         self.tracking_state.detection_done = True
+        self.tracking_state.confirmed_label = label
+        self.tracking_state.confirmed_confidence = conf
 
            # ✅ DAS Frame, auf dem YOLO lief
         self.tracking_state.confirmed_frame = frame
@@ -330,17 +344,7 @@ class MotionGate:
 
         # ✅ Debug Labels und Confidence speichern
 
-        if best_det["class_id"] == 1:
-            label = "AH"
-        else:
-            label = "EH"
 
-        conf = best_det["confidence"]
-
-        debug["confirmed"] = True
-        debug["confirmed_label"] = label
-        debug["confirmed_conf"] = conf
-        debug["yolo_bbox"] = best_det["bbox"]
 
         return None
 
