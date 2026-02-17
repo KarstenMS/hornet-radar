@@ -161,6 +161,7 @@ def draw_debug_overlay(frame, debug: dict):
     y = 20
     step = 22
 
+
     def line(text, color=(255, 255, 255)):
         nonlocal y
         cv2.putText(

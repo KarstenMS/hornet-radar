@@ -117,7 +117,6 @@ class MotionGate:
         self.source = "Video"
         debug["motion"] = False
         debug["tracking"] = False
-        debug["confirmed"] = False
 
         detections = None
         self.frame_count += 1
@@ -185,12 +184,12 @@ class MotionGate:
         return boxes
 
     def _update_tracking(self, frame, motion_boxes, debug):
-        #print("Update Tracking run")
 
         # -------------------------------------------------
         # 1. Tracker starten
         # -------------------------------------------------
         if motion_boxes and not self.tracking_state.active:
+            
             bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
 
             x, y, w, h = bbox
@@ -219,8 +218,7 @@ class MotionGate:
         # 2. Tracker updaten
         # -------------------------------------------------
         ok, bbox = self.tracking_state.tracker.update(frame)
-
-
+        debug["confirmed"] = self.tracking_state.confirmed
 
         if ok:
             # 🔍 Geometrie prüfen
