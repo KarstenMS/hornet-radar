@@ -46,4 +46,7 @@ def vector_from_points(
         vx = -vx
         vy = -vy
 
+    print("Raw dx/dy:", dx, dy)
+    print("Final vector:", vx, vy)
+
     return vx, vy
