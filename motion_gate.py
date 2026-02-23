@@ -374,7 +374,6 @@ class MotionGate:
             dwell_time=self.tracking_state.dwell_time,
         )
 
-
     def _create_tracker(self):
 
         t = TRACKER_TYPE.upper()
@@ -401,7 +400,6 @@ class MotionGate:
 
         raise RuntimeError("No suitable OpenCV tracker available")
     
-
     def xywh_to_xyxy(self,bbox):
         x, y, w, h = bbox
         return (x, y, x + w, y + h)

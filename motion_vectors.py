@@ -18,10 +18,10 @@ def vector_from_points(
         return None
 
     if mode == "approach":
-        # Take first n frames (or all if < VECTOR_WINDOW)
+        # --- Take first n frames ---
         sub_points = points[:VECTOR_WINDOW]
     elif mode == "departure":
-        # Take last n frames
+        # --- Take last n frames ---
         sub_points = points[-VECTOR_WINDOW:]
     else:
         raise ValueError(f"Unknown mode {mode}")
@@ -41,7 +41,8 @@ def vector_from_points(
     vx = dx / length
     vy = dy / length
 
-    if mode == "approach":
+    # -- invert approach vector to point towards nest direction --
+    if mode == "departure":
         vx = -vx
         vy = -vy
 
