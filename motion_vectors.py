@@ -42,7 +42,7 @@ def vector_from_points(
     vy = dy / length
 
     # -- invert approach vector to point towards nest direction --
-    if mode == "departure":
+    if mode == "approach":
         vx = -vx
         vy = -vy
 
