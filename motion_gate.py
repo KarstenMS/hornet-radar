@@ -20,11 +20,7 @@ class MotionGate:
     - object tracking
     - triggering YOLO
     - creating DetectionEvent objects
-
-    It does NOT:
-    - save files
-    - upload data
-    - know argparse or CLI flags
+    It maintains internal state for tracking and motion detection.
     """
 
     def __init__(self):

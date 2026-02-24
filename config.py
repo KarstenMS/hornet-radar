@@ -23,44 +23,6 @@ IMAGES_DIR = os.path.join(ROOT, "detections", "images")     # For analysing sing
 VIDEOS_DIR = os.path.join(ROOT, "detections","videos")      # For analysing videos
 EVENTS_DIR = os.path.join(ROOT, "detections", "events")     # Directory for storing local events
 
-# --- Supabase ---
-SUPABASE_URL = "https://lebtnjdpjntaqheahjoi.supabase.co"
-SUPABASE_KEY = "sb_secret_P7lY71HribtJdN1kIBw-Fw_6bCRZX50"
-BUCKET_NAME = "hornet-detections"
-TABLE_NAME = "sightings"
-
-# --- Motion_Gate Tracking settings ---
-TRACKER_TYPE = "AUTO"           # Available: "KCF", "CSRT", "MOSSE", "AUTO"
-FRAME_SKIP = 3                  # analyse only every 3rd frame (performance)
-TRACKING_STABLE_FRAMES = 5      # Number of frames to be stable before running detection
-
-# --- Tracker Geometry Abort Thresholds (percent of frame) ---
-
-TRACKER_INIT_MAX_AREA_RATIO = 0.15  # 15% vom Frame
-TRACKER_MAX_AREA_RATIO = 0.35      # >35% vom Frame = unmöglich für Hornisse
-TRACKER_MIN_AREA_RATIO = 0.0005    # <0.05% = Rauschen / Drift
-TRACKER_MAX_ASPECT_RATIO = 5.0     # extrem langgezogen
-TRACKER_MIN_ASPECT_RATIO = 0.2
-TRACKER_EDGE_MARGIN_RATIO = 0.02   # 2% Randtoleranz
-TRACKER_TIMEOUT = 5.0              # Seconds without update → reset
-TRACKER_MAX_INVALID_FRAMES = 5     # Max consecutive implausible frames before aborting tracking
-
-
-# --- Tracker ↔ Detection consistency (Abort Criterion 2) ---
-TRACK_DET_MIN_IOU = 0.1                    # IoU below → inconsistent
-TRACK_DET_MAX_CENTER_DIST_RATIO = 0.05     # Relative to frame diagonal
-DETECTION_MIN_AREA_RATIO = 0.00005         # Ignore tiny YOLO detections
-MIN_POST_CONFIRM_FRAMES = 6                # e.g 6–10 
-
-
-
-MOTION_HISTORY = 300            # Amount of frames used for Backgroundmodel ( low = faster but vulnerable to noise, high = slower, but stable background)
-MOTION_VAR_THRESHOLD = 25       # Sensibility of motion detection
-MOTION_MIN_AREA = 500           # Min pixel ara for being relevant
-
-MOTION_KERNEL_SIZE = 3          # Size of morphological filtering 
-MOTION_TRACK_LOST_TIMEOUT = 3.0 # Seconds, after which tracking stopps, if no motion. 
-
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"       # "picamera2" | "webcam"
 
@@ -84,3 +46,34 @@ THUMB_SIZE = 192, 108           # Pixel-Size for thumbnails. Default: 192, 108
 # --- Vector settings ---
 VECTOR_WINDOW = 5                   # Number of frames for approach/departure vector calculation
 VEKTOR_MIN_DISTANCE = 10.0          # Minimum pixel distance for a valid vector (to filter out noise)
+
+# --- Supabase ---
+SUPABASE_URL = "https://lebtnjdpjntaqheahjoi.supabase.co"
+SUPABASE_KEY = "sb_secret_P7lY71HribtJdN1kIBw-Fw_6bCRZX50"
+BUCKET_NAME = "hornet-detections"
+TABLE_NAME = "sightings"
+
+# --- Motion_Gate Tracking settings ---
+TRACKER_TYPE = "AUTO"           # Available: "KCF", "CSRT", "MOSSE", "AUTO"
+FRAME_SKIP = 3                  # analyse only every 3rd frame (performance)
+TRACKING_STABLE_FRAMES = 5      # Number of frames to be stable before running detection
+
+# --- Tracker Geometry Abort Thresholds (Abort Criterion) ---
+
+TRACKER_INIT_MAX_AREA_RATIO = 0.15  # 15% vom Frame
+TRACKER_MAX_AREA_RATIO = 0.35      # >35% vom Frame = unmöglich für Hornisse
+TRACKER_MIN_AREA_RATIO = 0.0005    # <0.05% = Rauschen / Drift
+TRACKER_MAX_ASPECT_RATIO = 5.0     # extrem langgezogen
+TRACKER_MIN_ASPECT_RATIO = 0.2
+TRACKER_EDGE_MARGIN_RATIO = 0.02   # 2% Randtoleranz
+TRACKER_MAX_INVALID_FRAMES = 5     # Max consecutive implausible frames before aborting tracking
+
+MIN_POST_CONFIRM_FRAMES = 6                # e.g 6–10 
+
+# -- Motion Settings ---
+MOTION_HISTORY = 300            # Amount of frames used for Backgroundmodel ( low = faster but vulnerable to noise, high = slower, but stable background)
+MOTION_VAR_THRESHOLD = 25       # Sensibility of motion detection
+MOTION_MIN_AREA = 500           # Min pixel ara for being relevant
+MOTION_KERNEL_SIZE = 3          # Size of morphological filtering 
+
+

@@ -1,5 +1,4 @@
 import cv2
-import time
 from config import (CAMERA_TYPE, CAMERA_WIDTH, CAMERA_HEIGHT, CAMERA_FPS, WEBCAM_INDEX, PICAM_FORMAT)
 
 class Camera:
