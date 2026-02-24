@@ -1,45 +1,48 @@
-# event.py
-import uuid
-import time
-from helpers import timestamp
-from typing import List, Dict, Optional, Tuple
+"""Hornet Radar: DetectionEvent data model representing one confirmed detection."""
 
+from __future__ import annotations
+
+import uuid
+from typing import Dict, List, Optional, Tuple, Any
+
+from helpers import timestamp
 
 
 class DetectionEvent:
-    """
-    Represents one confirmed detection event.
-    An event is created AFTER stable tracking and a YOLO detection run.
+    """A single confirmed detection event.
+
+    An event is created after stable tracking and a YOLO detection run.
+    It can be serialized to JSON and later uploaded.
     """
 
     def __init__(
         self,
         pi_id: str,
-        detections: List[Dict],
+        detections: List[Dict[str, Any]],
         *,
         model_name: str,
         source: str,
         tracking_bbox: Optional[Tuple[int, int, int, int]] = None,
         tracking_frames: int = 0,
         frame_shape: Optional[Tuple[int, int]] = None,
-        approach_vec: Optional[Tuple[int, int]] = None,
-        departure_vec: Optional[Tuple[int, int]] = None,
+        approach_vec: Optional[Tuple[float, float]] = None,
+        departure_vec: Optional[Tuple[float, float]] = None,
         dwell_time: Optional[float] = None,
-        frame=None,
-    ):
+        frame: Any = None,
+    ) -> None:
         # === Identity ===
         self.event_id: str = str(uuid.uuid4())
         self.pi_id: str = pi_id
-        self.timestamp: timestamp = timestamp()
+        self.timestamp: str = timestamp()
         self.source: str = source
 
         # === Detection results ===
-        self.detections: List[Dict] = detections
+        self.detections: List[Dict[str, Any]] = detections
         self.model_name: str = model_name
         self.frame = frame
 
         # === Confidence ===
-        self.confidence = max([d["confidence"] for d in detections], default=0.0)
+        self.confidence: float = max((d.get("confidence", 0.0) for d in detections), default=0.0)
 
         # === Tracking context ===
         self.tracking_bbox = tracking_bbox
@@ -51,23 +54,16 @@ class DetectionEvent:
         self.approach_vec = approach_vec
         self.departure_vec = departure_vec
         self.dwell_time = dwell_time
-        self.metadata: Dict = {}
+        self.metadata: Dict[str, Any] = {}
 
-        # === Media URLs & Dir ===
-        self.image_path = None
-        self.thumb_path= None
-        self.image_url = None
-        self.thumb_url= None
-
-    # --------------------------------------------------
-    # Helpers
-    # --------------------------------------------------
+        # === Media URLs & Paths ===
+        self.image_path: Optional[str] = None
+        self.thumb_path: Optional[str] = None
+        self.image_url: Optional[str] = None
+        self.thumb_url: Optional[str] = None
 
     def has_species(self, keyword: str) -> bool:
-        """
-        Checks if any detection contains the keyword
-        (e.g. 'asian', 'vespa_velutina').
-        """
+        """Return True if any detection label contains the given keyword."""
         keyword = keyword.lower()
         for d in self.detections:
             label = str(d.get("label", "")).lower()
@@ -75,10 +71,8 @@ class DetectionEvent:
                 return True
         return False
 
-    def to_dict(self) -> Dict:
-        """
-        Serializes the event for storage / upload.
-        """
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize the event to a JSON-compatible dict."""
         return {
             "event_id": self.event_id,
             "pi_id": self.pi_id,
@@ -97,7 +91,6 @@ class DetectionEvent:
             "source": self.source,
             "image_url": self.image_url,
             "thumb_url": self.thumb_url,
-
         }
 
     def __repr__(self) -> str:
