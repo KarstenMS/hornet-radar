@@ -32,7 +32,6 @@ class Camera:
         self.cap = cv2.VideoCapture(WEBCAM_INDEX)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.cap.set(cv2.CAP_PROP_FPS, CAMERA_FPS)
 
         if not self.cap.isOpened():
