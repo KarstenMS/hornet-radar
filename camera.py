@@ -1,12 +1,7 @@
 """Hornet Radar: camera abstraction for Picamera2 or standard USB webcams."""
 
-from __future__ import annotations
-
 import logging
-from typing import Optional
-
 import cv2
-
 from config import (
     CAMERA_FPS,
     CAMERA_HEIGHT,
@@ -18,13 +13,12 @@ from config import (
 
 logger = logging.getLogger(__name__)
 
-
 class Camera:
     """Unified frame source for either Picamera2 or a USB webcam."""
 
     def __init__(self) -> None:
         self.camera_type = CAMERA_TYPE
-        self.cap: Optional[cv2.VideoCapture] = None
+        self.cap = None
         self.picam2 = None
 
         if self.camera_type == "picamera2":
@@ -34,15 +28,14 @@ class Camera:
         else:
             raise ValueError(f"Unknown CAMERA_TYPE: {self.camera_type}")
 
-    def _init_webcam(self) -> None:
-        """Initialize an OpenCV webcam capture device."""
+    def _init_webcam(self) -> None: 
         self.cap = cv2.VideoCapture(WEBCAM_INDEX)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
         self.cap.set(cv2.CAP_PROP_FPS, CAMERA_FPS)
 
         if not self.cap.isOpened():
-            raise RuntimeError("Cannot open webcam")
+            raise RuntimeError("Cannot open Webcam")
 
     def _init_picamera2(self) -> None:
         """Initialize a Picamera2 capture device."""
@@ -60,10 +53,12 @@ class Camera:
             "AwbEnable": True,
         }
 
+        # Get Controls and check for Autofocus support
         available_controls = self.picam2.camera_controls
-        # Autofocus support is optional
+
+        # Set Autofocus to continuous if supported, otherwise fixed focus (default)
         if "AfMode" in available_controls:
-            controls_dict["AfMode"] = 2  # Continuous
+            controls_dict["AfMode"] = 2      # Continuous
             if "AfSpeed" in available_controls:
                 controls_dict["AfSpeed"] = 1  # Fast
 
@@ -72,8 +67,9 @@ class Camera:
                 "size": (CAMERA_WIDTH, CAMERA_HEIGHT),
                 "format": PICAM_FORMAT,
             },
-            controls=controls_dict,
+            controls=controls_dict
         )
+
         self.picam2.configure(config)
         self.picam2.start()
         time.sleep(1)
@@ -91,12 +87,11 @@ class Camera:
 
         if self.camera_type == "picamera2":
             return self.picam2.capture_array("main")
-
+        
         return None
 
     def release(self) -> None:
-        """Release underlying camera resources."""
-        if self.cap is not None:
+        if self.cap:
             self.cap.release()
-        if self.picam2 is not None:
+        if self.picam2:
             self.picam2.stop()

@@ -1,11 +1,7 @@
 """Hornet Radar: in-memory state container for an ongoing tracking session."""
-
-from __future__ import annotations
-
 import time
 from dataclasses import dataclass, field
 from typing import Any, List, Optional, Tuple
-
 
 @dataclass
 class TrackingState:

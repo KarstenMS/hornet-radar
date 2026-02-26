@@ -1,11 +1,9 @@
-"""Hornet Radar: DetectionEvent data model representing one confirmed detection."""
-
-from __future__ import annotations
-
+# event.py
 import uuid
-from typing import Dict, List, Optional, Tuple, Any
 
 from helpers import timestamp
+from typing import Dict, List, Optional, Tuple, Any
+
 
 
 class DetectionEvent:
@@ -30,6 +28,7 @@ class DetectionEvent:
         dwell_time: Optional[float] = None,
         frame: Any = None,
     ) -> None:
+        
         # === Identity ===
         self.event_id: str = str(uuid.uuid4())
         self.pi_id: str = pi_id
@@ -42,7 +41,7 @@ class DetectionEvent:
         self.frame = frame
 
         # === Confidence ===
-        self.confidence: float = max((d.get("confidence", 0.0) for d in detections), default=0.0)
+        self.confidence: float = max([d.get("confidence", 0.0) for d in detections], default=0.0)
 
         # === Tracking context ===
         self.tracking_bbox = tracking_bbox
@@ -50,20 +49,26 @@ class DetectionEvent:
         self.frame_shape = frame_shape
 
         # === Approach & Departure vectors ===
-        self.trajectory: List[Tuple[int, int]] = []
         self.approach_vec = approach_vec
         self.departure_vec = departure_vec
         self.dwell_time = dwell_time
-        self.metadata: Dict[str, Any] = {}
+  
 
-        # === Media URLs & Paths ===
+        # === Media URLs & Dir ===
         self.image_path: Optional[str] = None
         self.thumb_path: Optional[str] = None
         self.image_url: Optional[str] = None
         self.thumb_url: Optional[str] = None
 
+    # --------------------------------------------------
+    # Helpers
+    # --------------------------------------------------
+
     def has_species(self, keyword: str) -> bool:
-        """Return True if any detection label contains the given keyword."""
+        """
+        Checks if any detection contains the keyword
+        (e.g. 'asian', 'vespa_velutina').
+        """
         keyword = keyword.lower()
         for d in self.detections:
             label = str(d.get("label", "")).lower()
@@ -72,7 +77,9 @@ class DetectionEvent:
         return False
 
     def to_dict(self) -> Dict[str, Any]:
-        """Serialize the event to a JSON-compatible dict."""
+        """
+        Serializes the event for storage / upload.
+        """
         return {
             "event_id": self.event_id,
             "pi_id": self.pi_id,
@@ -83,14 +90,13 @@ class DetectionEvent:
             "tracking_bbox": self.tracking_bbox,
             "tracking_frames": self.tracking_frames,
             "frame_shape": self.frame_shape,
-            "trajectory": self.trajectory,
             "approach_vec": self.approach_vec,
             "departure_vec": self.departure_vec,
             "dwell_time": self.dwell_time,
-            "metadata": self.metadata,
             "source": self.source,
             "image_url": self.image_url,
             "thumb_url": self.thumb_url,
+
         }
 
     def __repr__(self) -> str:

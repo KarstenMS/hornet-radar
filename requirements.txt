@@ -1,0 +1,5 @@
+
+opencv-python>=4.8
+torch>=2.0
+requests>=2.31
+picamera2>=0.3.12 ; platform_machine == "aarch64"

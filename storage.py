@@ -1,17 +1,11 @@
 """Hornet Radar: Supabase upload helpers for images and JSON payloads."""
-
-from __future__ import annotations
-
 import logging
+import requests
 from pathlib import Path
 from typing import Any, Dict, Optional
+from config import SUPABASE_URL, SUPABASE_KEY, BUCKET_NAME, TABLE_NAME
 
-import requests
-
-from config import BUCKET_NAME, SUPABASE_KEY, SUPABASE_URL, TABLE_NAME
-
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger(__name__)   
 
 def _auth_headers(content_type: str) -> Dict[str, str]:
     """Build Supabase authentication headers."""
@@ -20,7 +14,6 @@ def _auth_headers(content_type: str) -> Dict[str, str]:
         "Authorization": f"Bearer {SUPABASE_KEY}",
         "Content-Type": content_type,
     }
-
 
 def upload_image_to_supabase(image_path: str, image_name: str, *, is_thumb: bool = False) -> Optional[str]:
     """Upload an image (or thumbnail) to Supabase Storage.
@@ -59,7 +52,6 @@ def upload_image_to_supabase(image_path: str, image_name: str, *, is_thumb: bool
     logger.warning("Upload failed for %s: %s %s", image_name, response.status_code, response.text)
     return None
 
-
 def upload_json_to_supabase(data: Dict[str, Any]) -> bool:
     """Upload one JSON record to the Supabase REST API table.
 
@@ -76,6 +68,5 @@ def upload_json_to_supabase(data: Dict[str, Any]) -> bool:
     if response.status_code == 201:
         logger.info("Uploaded JSON record")
         return True
-
     logger.warning("JSON upload failed: %s %s", response.status_code, response.text)
     return False

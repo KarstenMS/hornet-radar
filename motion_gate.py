@@ -1,13 +1,7 @@
-"""Hornet Radar: motion gating pipeline (background subtraction, tracking, YOLO trigger)."""
-
-from __future__ import annotations
-
-import logging
-import time
-from typing import Dict, Optional, Tuple
-
+# motion_gate.py
 import cv2
-
+import time
+import logging
 from config import (
     FRAME_SKIP,
     MAX_YOLO_ATTEMPTS,
@@ -29,13 +23,13 @@ from config import (
     TRACKING_STABLE_FRAMES,
 )
 from detection import load_model, run_detection
-from event import DetectionEvent
-from motion_vectors import vector_from_points
-from sources import FrameSource
 from tracking_state import TrackingState
+from event import DetectionEvent
+from sources import FrameSource
+from typing import Tuple, Optional, Dict
+from motion_vectors import vector_from_points
 
 logger = logging.getLogger(__name__)
-
 
 class MotionGate:
     """Main stateful pipeline.
@@ -53,7 +47,7 @@ class MotionGate:
         # --- YOLO ---
         self.model = load_model()
 
-        # --- Tracking ---
+         # --- Tracking ---
         self.tracking_state = TrackingState()
         self.tracker = None
         self.frame_count = 0
@@ -62,7 +56,7 @@ class MotionGate:
         self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
             history=MOTION_HISTORY,
             varThreshold=MOTION_VAR_THRESHOLD,
-            detectShadows=False,
+            detectShadows=False
         )
         self.kernel = cv2.getStructuringElement(
             cv2.MORPH_ELLIPSE, (MOTION_KERNEL_SIZE, MOTION_KERNEL_SIZE)
@@ -71,9 +65,6 @@ class MotionGate:
         # --- FPS (camera only) ---
         self.last_time = time.time()
         self.fps = 0.0
-
-        # Human readable for the event
-        self.source_name = "Unknown"
 
     def process_frame(self, frame, source: FrameSource) -> Tuple[Optional[DetectionEvent], Dict]:
         """Process one frame and return (event, debug).
@@ -86,6 +77,7 @@ class MotionGate:
             event: A <DetectionEvent> or None
             debug: A dict with debug values for overlays / logging
         """
+
         debug: Dict = {
             "source": source.value,
             "motion": False,
@@ -110,12 +102,13 @@ class MotionGate:
         if source == FrameSource.CAMERA:
             self.source_name = "Camera"
             return self._process_camera(frame, debug)
-
-        raise ValueError(f"Unsupported FrameSource: {source}")
+        
+        raise ValueError(f"Unsupported FrameSource: {source}")    
 
     def _process_camera(self, frame, debug: Dict) -> Tuple[Optional[DetectionEvent], Dict]:
         """Camera mode: motion-gate + tracker + YOLO trigger."""
-        # FPS
+        event = None  
+
         now = time.time()
         dt = now - self.last_time
         if dt > 0:
@@ -123,23 +116,28 @@ class MotionGate:
         self.last_time = now
         debug["fps"] = self.fps
 
-        # Frame skipping for motion detection
+        # Frame skipping for motion detection--
         self.frame_count += 1
         process_this_frame = (self.frame_count % FRAME_SKIP == 0)
 
+        # --- Motion Detection (only every N Frames) ---
         motion_boxes = []
         if process_this_frame:
             motion_boxes = self._update_motion(frame, debug)
 
-        event = self._update_tracking(frame, motion_boxes, debug)
+        # --- Tracking (always)
+        event = self._update_tracking(frame, motion_boxes, debug)      
         if event:
             return event, debug
-
+        
+        # -- Yolo (if tracking, stable, and not done yet)
         self._maybe_run_yolo(frame, debug)
+
         return None, debug
 
     def _process_video(self, frame, debug: Dict) -> Tuple[Optional[DetectionEvent], Dict]:
         """Video mode: run YOLO on every Nth frame (no tracking)."""
+
         self.frame_count += 1
         if self.frame_count % FRAME_SKIP != 0:
             return None, debug
@@ -147,7 +145,7 @@ class MotionGate:
         detections = run_detection(frame, self.model)
         if not detections:
             return None, debug
-
+        
         event = DetectionEvent(
             pi_id=PI_ID,
             detections=detections,
@@ -158,11 +156,13 @@ class MotionGate:
             source=self.source_name,
             frame_shape=frame.shape[:2],
         )
+
         debug["yolo_ran"] = True
         return event, debug
 
     def _process_image(self, frame, debug: Dict) -> Tuple[Optional[DetectionEvent], Dict]:
         """Image mode: run YOLO once (no tracking)."""
+   
         detections = run_detection(frame, self.model)
         if not detections:
             return None, debug
@@ -176,6 +176,7 @@ class MotionGate:
             source=self.source_name,
             frame_shape=frame.shape[:2],
         )
+
         debug["yolo_ran"] = True
         return event, debug
 
@@ -207,6 +208,7 @@ class MotionGate:
                 logger.debug("Rejecting tracker init: motion bbox too large (ratio=%.3f)", area_ratio)
                 return None
 
+
             self.tracker = self._create_tracker()
             self.tracker.init(frame, bbox)
             self.tracking_state.start(self.tracker, bbox, frame.shape[:2])
@@ -215,20 +217,20 @@ class MotionGate:
         # 2) No active tracker
         if not self.tracking_state.active:
             return None
-
+        
         # 3) Update tracker
         ok, bbox = self.tracking_state.tracker.update(frame)
         if not ok:
-            # Tracker lost
+            # Tracker lost -> finalize event if confirmed, then reset
             return self._maybe_finalize_on_loss()
-
-        plausible = self._bbox_is_plausible(bbox, frame.shape[:2])
+        
+        plausible = self.bbox_is_plausible(bbox, frame.shape[:2])
         debug["bbox_plausible"] = plausible
 
         if not plausible:
             self.tracking_state.invalid_frames += 1
             if self.tracking_state.invalid_frames > TRACKER_MAX_INVALID_FRAMES:
-                return self._maybe_finalize_on_loss(min_post_confirm=True)
+                    return self._maybe_finalize_on_loss(min_post_confirm=True)
             return None
 
         # Geometry OK
@@ -241,51 +243,40 @@ class MotionGate:
         else:
             self.tracking_state.frames_since_confirmed += 1
 
-        # Debug output
         debug["tracking"] = True
         debug["frames_tracked"] = self.tracking_state.frames_tracked
         debug["tracking_bbox"] = tuple(map(int, bbox))
         debug["confirmed"] = self.tracking_state.confirmed
+
         if self.tracking_state.confirmed:
             debug["confirmed_label"] = self.tracking_state.confirmed_label
             debug["confirmed_conf"] = self.tracking_state.confirmed_confidence
 
         return None
 
-    def _maybe_finalize_on_loss(self, *, min_post_confirm: bool = False) -> Optional[DetectionEvent]:
-        """Finalize an event when tracking is lost, if confirmed."""
-        if self.tracking_state.confirmed:
-            if min_post_confirm and self.tracking_state.frames_since_confirmed < MIN_POST_CONFIRM_FRAMES:
-                return None
-            event = self._finalize_event()
-            self.tracking_state.reset()
-            return event
-
-        self.tracking_state.reset()
-        return None
-
     def _maybe_run_yolo(self, frame, debug: Dict) -> None:
-        """Run YOLO once after stable tracking and store the confirmation in state."""
+
         if self.tracking_state.detection_done:
             return
 
-        if self.tracking_state.frames_tracked < TRACKING_STABLE_FRAMES:
+        if  self.tracking_state.frames_tracked < TRACKING_STABLE_FRAMES:
             return
-
+        
         if self.tracking_state.yolo_attempts >= MAX_YOLO_ATTEMPTS:
-            logger.debug("YOLO attempts exhausted -> abort tracking")
             self.tracking_state.reset()
-            return
+            return 
 
         detections = run_detection(frame, self.model)
+
+        print(f"Detection done, found {len(detections)} objects")
         debug["yolo_ran"] = True
         self.tracking_state.yolo_attempts += 1
 
         if not detections:
             return
-
+        
         # Pick the highest-confidence detection
-        best_det = max(detections, key=lambda d: float(d.get("confidence", 0.0)))
+        best_det = max(detections, key=lambda d: float(d.get("confidence", 0.0)))   
         label = "AH" if best_det.get("class_id") == 1 else "EH"
         conf = float(best_det.get("confidence", 0.0))
 
@@ -299,15 +290,29 @@ class MotionGate:
 
         self.tracking_state.confirmed = True
         self.tracking_state.detection_done = True
+        self.tracking_state.detections = detections
+
         self.tracking_state.confirmed_label = label
         self.tracking_state.confirmed_confidence = conf
         self.tracking_state.confirmed_frame = frame
         self.tracking_state.confirmed_frame_shape = frame.shape
-        self.tracking_state.confirmed_yolo_bbox = best_det["bbox"]
-        self.tracking_state.detections = detections
+        self.tracking_state.confirmed_yolo_bbox = best_det["bbox"] 
 
+    def _maybe_finalize_on_loss(self, *, min_post_confirm: bool = False) -> Optional[DetectionEvent]:
+        """Finalize an event when tracking is lost, if confirmed."""
+        if self.tracking_state.confirmed:
+            if min_post_confirm and self.tracking_state.frames_since_confirmed < MIN_POST_CONFIRM_FRAMES:
+                return None
+            event = self._finalize_event()
+            self.tracking_state.reset()
+            return event
+
+        self.tracking_state.reset()
+        return None
+    
     def _finalize_event(self) -> DetectionEvent:
         """Create a <DetectionEvent> from current tracking state."""
+        
         centers = self.tracking_state.centers
         approach_vec = vector_from_points(centers, mode="approach")
         departure_vec = vector_from_points(centers, mode="departure")
@@ -332,8 +337,10 @@ class MotionGate:
 
         if t == "KCF" and hasattr(cv2, "TrackerKCF_create"):
             return cv2.TrackerKCF_create()
+
         if t == "CSRT" and hasattr(cv2, "TrackerCSRT_create"):
             return cv2.TrackerCSRT_create()
+
         if t == "MOSSE" and hasattr(cv2, "TrackerMOSSE_create"):
             return cv2.TrackerMOSSE_create()
 
@@ -344,14 +351,14 @@ class MotionGate:
                 return cv2.TrackerKCF_create()
 
         raise RuntimeError("No suitable OpenCV tracker available")
-
-    def _bbox_is_plausible(self, bbox, frame_shape) -> bool:
-        """Apply basic plausibility checks to tracker bounding boxes."""
+    
+    def bbox_is_plausible(self, bbox, frame_shape) -> bool:
         x, y, w, h = bbox
         fh, fw = frame_shape
 
         area_ratio = (w * h) / (fw * fh)
         aspect = w / h if h > 0 else 0
+
 
         # Always apply max-area check
         if area_ratio > TRACKER_MAX_AREA_RATIO:
@@ -364,17 +371,18 @@ class MotionGate:
             if aspect > TRACKER_MAX_ASPECT_RATIO or aspect < TRACKER_MIN_ASPECT_RATIO:
                 return False
 
-        # Edge hugging check (after a few frames)
-        margin_x = fw * TRACKER_EDGE_MARGIN_RATIO
-        margin_y = fh * TRACKER_EDGE_MARGIN_RATIO
+            # Edge hugging check (after a few frames)
+            margin_x = fw * TRACKER_EDGE_MARGIN_RATIO
+            margin_y = fh * TRACKER_EDGE_MARGIN_RATIO
 
-        if self.tracking_state.frames_tracked > 3:
-            if (
-                x <= margin_x
-                or y <= margin_y
-                or x + w >= fw - margin_x
-                or y + h >= fh - margin_y
-            ):
-                return False
+
+            if self.tracking_state.frames_tracked > 3:
+                if(
+                    x <= margin_x or
+                    y <= margin_y or
+                    x + w >= fw - margin_x or
+                    y + h >= fh - margin_y
+                ):
+                    return False
 
         return True

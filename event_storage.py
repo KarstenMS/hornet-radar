@@ -1,21 +1,17 @@
 """Hornet Radar: local persistence and Supabase upload of <DetectionEvent> artifacts."""
 
-from __future__ import annotations
-
-import json
-import logging
 import os
+import json
+import cv2
+import logging
 from typing import Optional
 
-import cv2
-
-from config import EVENTS_DIR, LATITUDE, LONGITUDE
-from event import DetectionEvent
-from helpers import create_thumbnail, ensure_directories, timestamp
+from helpers import create_thumbnail, timestamp, ensure_directories
 from storage import upload_image_to_supabase, upload_json_to_supabase
+from event import DetectionEvent
+from config import EVENTS_DIR, LATITUDE, LONGITUDE
 
 logger = logging.getLogger(__name__)
-
 
 def save_event(event: DetectionEvent, frame) -> Optional[str]:
     """Persist a <DetectionEvent> to disk (images + JSON).
@@ -36,13 +32,16 @@ def save_event(event: DetectionEvent, frame) -> Optional[str]:
     Raises:
         RuntimeError: If no frame is provided.
     """
+
     if frame is None:
         raise RuntimeError("Event has no confirmed frame")
-
+    
     event_time = timestamp().replace(":", "-")
     event_dir_name = f"{event.pi_id}_{event_time}"
     event_dir = os.path.join(EVENTS_DIR, event_dir_name)
+
     ensure_directories(event_dir)
+
 
     labeled_name = f"{event.pi_id}_{event.event_id}.jpg"
     thumb_name = f"{event.pi_id}_{event.event_id}_thumb.jpg"
@@ -57,11 +56,13 @@ def save_event(event: DetectionEvent, frame) -> Optional[str]:
 
     # Draw detections
     labeled = frame.copy()
+
     for d in event.detections:
         x1, y1, x2, y2 = d["bbox"]
-        conf = f"{float(d.get('confidence', 0.0)) * 100:.1f}%"
+        conf = f"{float(d.get('confidence', 0.0))*100:.1f}%"
         # Project-specific mapping: 1 => Asian Hornet, else European Hornet
-        label = "AH" if d.get("class_id") == 1 else "EH"
+        label = "AH" if d["class_id"] == 1 else "EH"
+
         cv2.rectangle(labeled, (x1, y1), (x2, y2), (0, 0, 255), 2)
         cv2.putText(
             labeled,
@@ -70,10 +71,11 @@ def save_event(event: DetectionEvent, frame) -> Optional[str]:
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
             (0, 0, 255),
-            2,
+            2
         )
 
     cv2.imwrite(labeled_path, labeled)
+
     create_thumbnail(labeled_path, thumb_path)
 
     event.image_path = labeled_path
@@ -83,8 +85,8 @@ def save_event(event: DetectionEvent, frame) -> Optional[str]:
         json.dump(event.to_dict(), f, indent=2)
 
     logger.info("[EVENT] Saved locally: %s", event_dir)
-    return event_dir
 
+    return event_dir
 
 def upload_event(event: DetectionEvent) -> bool:
     """Upload event media + JSON to Supabase.
@@ -95,6 +97,7 @@ def upload_event(event: DetectionEvent) -> bool:
     Returns:
         True if upload succeeded, otherwise False.
     """
+
     if not event.image_path or not event.thumb_path:
         raise RuntimeError("Event has no saved image paths")
 
@@ -111,12 +114,13 @@ def upload_event(event: DetectionEvent) -> bool:
     event.image_url = image_url
     event.thumb_url = thumb_url
 
+    # --- Build JSON ---
     data = {
         "pi_id": event.pi_id,
         "timestamp": event.timestamp,
         "confidence": event.confidence,
         "species": [
-            "asian_hornet" if d.get("class_id") == 1 else "european_hornet" for d in event.detections
+            "asian_hornet" if d["class_id"] == 1 else "european_hornet" for d in event.detections
         ],
         "detections": event.detections,
         "latitude": LATITUDE,
