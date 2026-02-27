@@ -14,7 +14,7 @@ Increment this by one (e.g PI-99) , which will be your PI_ID through the further
 - tps://www.raspberrypi.com/software/ and go through the setup:
 - Select your PI version -> 64bit Raspberry PI OS System -> your Micro-SD Card
 - Choose the name $PI-ID an and select your localization settings
-- Select the username hornet and a password you prefer. You can also select a different username, but than you'll have to adjust the hornet-radar.service file.
+- Select the username "hornet" and a password of your choice. You can also choose a different username, but than you'll have to adjust the hornet-radar.service file.
 - Enter the credentials for your Wifi and enable SSH if you want to access the PI through command line - otherwise disable it
 - I recommend creating a Raspberry Pi Connect account and enable it on the PI, making the admiistration much easier.
 
