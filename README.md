@@ -28,7 +28,7 @@ Connect to your Raspberry Pi through connect.raspberrypi.com and open a terminal
 | pip install opencv-contrib-python --break-system-packages                                                  | Install OpenCV Contrib                          |
 | pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu --break-system-packages     | Install Torch & Torchvision                     |
 | pip install yolov5 --break-system-packages                                                                 | Install Yolov5 and Ultralytics                  |
-| pip install picamera2
+| pip install "urllib3>=2.6.0" --break-system-packages                                                       | Install urllib3 to suppress yolo errors
 |------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
 | sudo apt-get install imx500-all                                                                            | Only requiert if you use the AI-Camera          |
 | sudo
