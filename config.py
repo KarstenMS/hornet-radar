@@ -14,7 +14,7 @@ SHOW_DEBUG_VIDEO = True                                         # Shows Debug Vi
 ROOT = "/home/hornet/hornet-radar"
 
 YOLO_DIR = os.path.join(ROOT, "yolov5")
-MODEL_DIR = os.path.join(YOLO_DIR, "models", "yolov5s-all-data.pt")
+MODEL_DIR = os.path.join(ROOT, "model", "yolov5s-all-data.pt")
 MODEL_NAME = "yolo5"
 
 IMAGES_DIR = os.path.join(ROOT, "detections", "images")         # For analyzing single pictures
