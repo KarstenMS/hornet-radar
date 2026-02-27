@@ -21,8 +21,14 @@ Hornet-radar setup:
 
 Connect to your Raspberry Pi through connect.raspberrypi.com and open a terminal window to run the following commands:
 
-| Command                                                        |                                    Description  |
-|----------------------------------------------------------------|-------------------------------------------------|
-| sudo apt-get update && sudo apt-get upgrade                    | Upgrade your Pi to latest version               |
-| git-clone https://github.com/KarstenMS/hornet-radar.git        | Clone the latest version of hornet-radar.git    |
-| sudo apt install python3-opencv                                | Install OpenCV                                  |
+| Command                                                                                                    |                                    Description  |
+|------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| sudo apt-get update && sudo apt-get upgrade                                                                | Upgrade your Pi to latest version               |
+| git-clone https://github.com/KarstenMS/hornet-radar.git                                                    | Clone the latest version of hornet-radar.git    |
+| pip install opencv-contrib-python --break-system-packages                                                  | Install OpenCV Contrib                          |
+| pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu --break-system-packages     | Install Torch & Torchvision                     |
+| pip install yolov5 --break-system-packages                                                                 | Install Yolov5 and Ultralytics                  |
+| pip install picamera2
+|------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| sudo apt-get install imx500-all                                                                            | Only requiert if you use the AI-Camera          |
+| sudo
