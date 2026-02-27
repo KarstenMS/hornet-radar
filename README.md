@@ -22,6 +22,7 @@ Hornet-radar setup:
 
 Connect to your Raspberry Pi through connect.raspberrypi.com and open a terminal window to run the following commands:
 
-sudo apt-get update && sudo apt-get upgrade                    // Upgrade your Pi to latest version
-git-clone https://github.com/KarstenMS/hornet-radar.git        // Clone the latest version of hornet-radar.git
-
+| Command  |  Description  |
+| sudo apt-get update && sudo apt-get upgrade                    | Upgrade your Pi to latest version              |
+| git-clone https://github.com/KarstenMS/hornet-radar.git        | Clone the latest version of hornet-radar.git    |
+| sudo apt install python3-opencv                                | Install OpenCV                                  |
