@@ -3,18 +3,18 @@
 import os
 
 # --- Raspberry Pi setup ---
-PI_ID = "PI_05"
+PI_ID = "PI-X"
 
-LATITUDE = 48.15223219783116                                    # Get the values from Google maps
-LONGITUDE = 11.436030279093017
+LATITUDE = 00.0                                    # Get the values from Google maps
+LONGITUDE = 00.0
 
 SHOW_DEBUG_VIDEO = True                                         # Shows Debug Video on the PI (requires GUI), default False
 
 # --- Directories ---
-ROOT = "/home/hornet1/hornet-radar"
+ROOT = "/home/hornet/hornet-radar"
 
-MODEL_DIR = os.path.join(ROOT, "model", "yolov5s-all-data.pt")
 YOLO_DIR = os.path.join(ROOT, "yolov5")
+MODEL_DIR = os.path.join(YOLO_DIR, "models", "yolov5s-all-data.pt")
 MODEL_NAME = "yolo5"
 
 IMAGES_DIR = os.path.join(ROOT, "detections", "images")         # For analyzing single pictures
