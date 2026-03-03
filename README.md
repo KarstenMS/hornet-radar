@@ -54,3 +54,15 @@ All other settings can remain default for the beginning or modified if needed.
 
 Run `python /home/hornet/hornet-radar/main.py` for a test run
 Use the -v switch to analyse videos from hornet-radar/detections/videos or -i for analysing images from hornet-radar/detections/images
+
+## Running in production:
+
+Once you've ensured everything is working as expected you should create a systemctl daemon, which automatically starts main.py after every reboot and every 12 hours:
+- Set SHOW_DEBUG_VIDEO to False in config.py
+- Run `nano /home/hornet/hornet-radar/hornet-radar.service` to verify the directory and settings
+- Run `sudo mv /home/hornet/hornet-radar/hornet-radar.service /etc/systemd/system/hornet-radar.service` to copy the service file
+- Run `sudo systemctl daemon-reload` and `sudo systemctl enable hornet-radar.service` to active the daemon
+- Run `systemctl status hornet-radar.service` to ensure the service is running state and display the last console outputs
+
+
+
