@@ -47,3 +47,4 @@ Run nano /home/hornet/hornet-radar/config.py to modify the configuration file:
 | CONFIDENCE_THRESHOLD                          | If you get a lot of false positives you can increase this                                                     |
 | SUPABASE_KEY                                  | Please write to admin@hornet-radar.com to receive your personal Key for uploading Informations to the webpage |
 
+All other settings can remain default for the beginning or modified if needed.
