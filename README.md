@@ -1,6 +1,6 @@
 # hornet-radar
 Detection system for European (Vespa crapro) and Asian hornets (Vespa velutina nigrithorax)
-Please visit https://hornet-radar.com for more details.
+Please visit [Hornet-Radar](https://hornet-radar.com) for more details.
 
 
 ## Installation:
@@ -10,7 +10,7 @@ Please visit https://hornet-radar.com for more details.
 Go to https://hornet-radar.com -> Detailed view or Map and search vor the latest PI-ID. 
 Increment this by one (e.g PI-99) , which will be your PI_ID through the further setup refering as $PI-ID
 
-Run the Raspberry Pi Imager from https://www.raspberrypi.com/software/ and go through the setup:
+Run the Raspberry Pi Imager from the official [RaspberryPi website](https://www.raspberrypi.com/software/) and go through the setup:
 - Select your PI version -> 64bit Raspberry PI OS System -> your Micro-SD Card
 - Choose the name $PI-ID an and select your localization settings
 - Select the username "hornet" and a password of your choice. You can also choose a different username, but than you'll have to adjust the hornet-radar.service file.
@@ -39,7 +39,7 @@ Run nano /home/hornet/hornet-radar/config.py to modify the configuration file:
 | Necessary Options                             |                                                                                                 Description   |
 |-----------------------------------------------|---------------------------------------------------------------------------------------------------------------|
 | PI_ID                                         | Unique identification number of your Bait-Station                                                             |
-| LATITUDE / LONGITUTE                          | Used for positioning your Bait-Station on https://hornet-radar.com/maps                                       |
+| LATITUDE / LONGITUTE                          | Used for positioning your Bait-Station on the [Maps page](https://hornet-radar.com/maps)                      |
 | SHOW_DEBUG_VIDEO                              | Good for testing and troubleshooting. Should be set to False in production                                    |
 | ROOT                                          | Change only if you use different username                                                                     |
 | CAMERA_TYPE                                   | Choose if you use a Pi Camera or Webcam                                                                       |
