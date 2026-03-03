@@ -63,6 +63,7 @@ Once you've ensured everything is working as expected you should create a system
 - Run `sudo mv /home/hornet/hornet-radar/hornet-radar.service /etc/systemd/system/hornet-radar.service` to copy the service file
 - Run `sudo systemctl daemon-reload` and `sudo systemctl enable hornet-radar.service` to active the daemon
 - Run `systemctl status hornet-radar.service` to ensure the service is running state and display the last console outputs
+- For an ongoing console output use `journalctl -u hornet-radar.service -f`
 
 
 
