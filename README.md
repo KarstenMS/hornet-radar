@@ -7,7 +7,7 @@ Please visit [Hornet-Radar](https://hornet-radar.com) for more details.
 
 ### Raspberry PI setup:
 
-Go to https://hornet-radar.com -> Detailed view or Map and search vor the latest PI-ID. 
+Go to the [Detailed view](https://hornet-radar.com/details) or [Map](https://hornet-radar.com/map) page and search vor the highest PI-ID. 
 Increment this by one (e.g PI-99) , which will be your PI_ID through the further setup refering as $PI-ID
 
 Run the Raspberry Pi Imager from the official [RaspberryPi website](https://www.raspberrypi.com/software/) and go through the setup:
@@ -16,6 +16,7 @@ Run the Raspberry Pi Imager from the official [RaspberryPi website](https://www.
 - Select the username "hornet" and a password of your choice. You can also choose a different username, but than you'll have to adjust the hornet-radar.service file.
 - Enter the credentials for your Wifi and enable SSH if you want to access the PI through command line - otherwise disable it
 - I recommend creating a Raspberry Pi Connect account and enable it on the PI, making the admiistration much more easier.
+
 
 ### Hornet-radar setup:
 
@@ -38,10 +39,10 @@ Run nano /home/hornet/hornet-radar/config.py to modify the configuration file:
 
 | Necessary Options                             |                                                                                                 Description   |
 |-----------------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| PI_ID                                         | Unique identification number of your Bait-Station                                                             |
+| PI_ID                                         | Enter your $PI-ID as a unique identification number for your Bait-Station                                     |
 | LATITUDE / LONGITUTE                          | Used for positioning your Bait-Station on the [Maps page](https://hornet-radar.com/maps)                      |
 | SHOW_DEBUG_VIDEO                              | Good for testing and troubleshooting. Should be set to False in production                                    |
-| ROOT                                          | Change only if you use different username                                                                     |
+| ROOT                                          | Change only if you choosed a different username                                                               |
 | CAMERA_TYPE                                   | Choose if you use a Pi Camera or Webcam                                                                       |
 | CAMERA_WIDTH / CAMERA_HEIGHT / CAMERA_FPS     | If you use older generations of RaspberryPi you may wanna decrease this for performance                       |
 | CONFIDENCE_THRESHOLD                          | If you get a lot of false positives you can increase this                                                     |
