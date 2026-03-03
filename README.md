@@ -40,7 +40,7 @@ Run nano /home/hornet/hornet-radar/config.py to modify the configuration file:
 | Necessary Options                             |                                                                                                 Description   |
 |-----------------------------------------------|---------------------------------------------------------------------------------------------------------------|
 | PI_ID                                         | Enter your $PI-ID as a unique identification number for your Bait-Station                                     |
-| LATITUDE / LONGITUTE                          | Used for positioning your Bait-Station on the [Maps page](https://hornet-radar.com/en/maps)                   |
+| LATITUDE / LONGITUTE                          | Used for positioning your Bait-Station on the [Map page](https://hornet-radar.com/en/map)                     |
 | SHOW_DEBUG_VIDEO                              | Good for testing and troubleshooting. Should be set to False in production                                    |
 | ROOT                                          | Change only if you choosed a different username                                                               |
 | CAMERA_TYPE                                   | Choose if you use a Pi Camera or Webcam                                                                       |
