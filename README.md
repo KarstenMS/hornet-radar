@@ -3,9 +3,9 @@ Detection system for European (Vespa crapro) and Asian hornets (Vespa velutina n
 Please visit https://hornet-radar.com for more details.
 
 
-##Installation:
+## Installation:
 
-###Raspberry PI setup:
+### Raspberry PI setup:
 
 Go to https://hornet-radar.com -> Detailed view or Map and search vor the latest PI-ID. 
 Increment this by one (e.g PI-99) , which will be your PI_ID through the further setup refering as $PI-ID
@@ -17,7 +17,7 @@ Run the Raspberry Pi Imager from https://www.raspberrypi.com/software/ and go th
 - Enter the credentials for your Wifi and enable SSH if you want to access the PI through command line - otherwise disable it
 - I recommend creating a Raspberry Pi Connect account and enable it on the PI, making the admiistration much more easier.
 
-###Hornet-radar setup:
+### Hornet-radar setup:
 
 Connect to your Raspberry Pi through connect.raspberrypi.com and open a terminal window to run the following commands:
 
@@ -32,7 +32,7 @@ Connect to your Raspberry Pi through connect.raspberrypi.com and open a terminal
 | `pip uninstall opencv-python -y --break-system-packages`                                                     | Uninstall regular opencv as we use opencv-contrib|
 | `sudo apt-get install imx500-all`                                                                            | Only requiered if you use the Pi AI-Camera       |
 
-###Hornet-radar config:
+### Hornet-radar config:
 
 Run nano /home/hornet/hornet-radar/config.py to modify the configuration file:
 
@@ -49,7 +49,7 @@ Run nano /home/hornet/hornet-radar/config.py to modify the configuration file:
 
 All other settings can remain default for the beginning or modified if needed.
 
-##Running:
+## Running:
 
 Run `python /home/hornet/hornet-radar/main.py` for a test run
 Use the -v switch to analyse videos from hornet-radar/detections/videos or -i for analysing images from hornet-radar/detections/images
