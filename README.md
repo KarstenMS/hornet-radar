@@ -7,7 +7,7 @@ Please visit [Hornet-Radar](https://hornet-radar.com) for more details.
 
 ### Raspberry PI setup:
 
-Go to the [Detailed view](https://hornet-radar.com/en/details) or [Map](https://hornet-radar.com/en/map) page and search vor the highest PI-ID. 
+Go to the [Detailed view](https://hornet-radar.com/en/details) page and search vor the highest PI-ID of all Bait-Stations. 
 Increment this by one (e.g PI-99) , which will be your PI_ID through the further setup refering as $PI-ID
 
 Run the Raspberry Pi Imager from the official [RaspberryPi website](https://www.raspberrypi.com/software/) and go through the setup:
