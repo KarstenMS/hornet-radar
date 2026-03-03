@@ -7,7 +7,7 @@ Please visit [Hornet-Radar](https://hornet-radar.com) for more details.
 
 ### Raspberry PI setup:
 
-Go to the [Detailed view](https://hornet-radar.com/details) or [Map](https://hornet-radar.com/map) page and search vor the highest PI-ID. 
+Go to the [Detailed view](https://hornet-radar.com/en/details) or [Map](https://hornet-radar.com/en/map) page and search vor the highest PI-ID. 
 Increment this by one (e.g PI-99) , which will be your PI_ID through the further setup refering as $PI-ID
 
 Run the Raspberry Pi Imager from the official [RaspberryPi website](https://www.raspberrypi.com/software/) and go through the setup:
@@ -40,7 +40,7 @@ Run nano /home/hornet/hornet-radar/config.py to modify the configuration file:
 | Necessary Options                             |                                                                                                 Description   |
 |-----------------------------------------------|---------------------------------------------------------------------------------------------------------------|
 | PI_ID                                         | Enter your $PI-ID as a unique identification number for your Bait-Station                                     |
-| LATITUDE / LONGITUTE                          | Used for positioning your Bait-Station on the [Maps page](https://hornet-radar.com/maps)                      |
+| LATITUDE / LONGITUTE                          | Used for positioning your Bait-Station on the [Maps page](https://hornet-radar.com/en/maps)                   |
 | SHOW_DEBUG_VIDEO                              | Good for testing and troubleshooting. Should be set to False in production                                    |
 | ROOT                                          | Change only if you choosed a different username                                                               |
 | CAMERA_TYPE                                   | Choose if you use a Pi Camera or Webcam                                                                       |
