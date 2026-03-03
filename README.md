@@ -30,7 +30,6 @@ Connect to your Raspberry Pi through connect.raspberrypi.com and open a terminal
 | pip install yolov5 --break-system-packages                                                                 | Install Yolov5 and Ultralytics                   |
 | pip install "urllib3>=2.6.0" --break-system-packages                                                       | Install urllib3 to suppress yolo errors          |
 | pip uninstall opencv-python -y --break-system-packages                                                     | Uninstall regular opencv as we use opencv-contrib|
-|------------------------------------------------------------------------------------------------------------|--------------------------------------------------|
 | sudo apt-get install imx500-all                                                                            | Only requiered if you use the Pi AI-Camera       |
 
 Hornet-radar config:
@@ -47,5 +46,4 @@ Run nano /home/hornet/hornet-radar/config.py to modify the configuration file:
 | CAMERA_WIDTH / CAMERA_HEIGHT / CAMERA_FPS     | If you use older generations of RaspberryPi you may wanna decrease this for performance                       |
 | CONFIDENCE_THRESHOLD                          | If you get a lot of false positives you can increase this                                                     |
 | SUPABASE_KEY                                  | Please write to admin@hornet-radar.com to receive your personal Key for uploading Informations to the webpage |
-|-----------------------------------------------|---------------------------------------------------------------------------------------------------------------|
 
