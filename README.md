@@ -17,7 +17,7 @@ Please visit [Hornet-Radar](https://hornet-radar.com) for more details.
 
 Go to the [Detailed view](https://hornet-radar.com/en/details) page and search for the highest PI-ID of all bait stations.  
 Increment this by one (e.g. `PI-99`).  
-This will be your PI_ID throughout the setup, referred to as `$PI_ID`.
+This will be your PI-ID throughout the setup, referred to as `$PI-ID`.
 
 Run the **Raspberry Pi Imager** from the official  
 [Raspberry Pi website](https://www.raspberrypi.com/software/)  
@@ -25,7 +25,7 @@ and go through the setup:
 
 - Select your Pi version → **64‑bit Raspberry Pi OS**
 - Select your **microSD card**
-- Choose the name `$PI_ID` and select your localization settings
+- Choose the name `$PI-ID` and select your localization settings
 - Select the username **`hornet`** and a password of your choice  
   (If you choose a different username, you must adjust `hornet-radar.service`)
 - Enter your Wi‑Fi credentials and enable **SSH** if you want CLI access
