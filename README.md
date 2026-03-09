@@ -47,6 +47,7 @@ and open a terminal window to run the following commands:
 | `pip install yolov5 --break-system-packages` | Install YOLOv5 and Ultralytics |
 | `pip install "urllib3>=2.6.0" --break-system-packages` | Install urllib3 to suppress YOLO errors |
 | `pip uninstall opencv-python -y --break-system-packages` | Remove regular OpenCV (not needed) |
+| `pip uninstall opencv-contrib-python -y --break-system-packages` | Reinstall OpenCV Contrib |
 | `pip install opencv-contrib-python --break-system-packages` | Install OpenCV Contrib |
 | `sudo apt-get install imx500-all` | Only required when using the Pi AI Camera |
 
