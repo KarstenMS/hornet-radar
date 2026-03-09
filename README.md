@@ -43,11 +43,11 @@ and open a terminal window to run the following commands:
 |-------|------------|
 | `sudo apt-get update && sudo apt-get upgrade` | Upgrade your Pi to the latest version |
 | `git clone https://github.com/KarstenMS/hornet-radar.git` | Clone the latest hornet-radar repository |
-| `pip install opencv-contrib-python --break-system-packages` | Install OpenCV Contrib |
 | `pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu --break-system-packages` | Install Torch & Torchvision |
 | `pip install yolov5 --break-system-packages` | Install YOLOv5 and Ultralytics |
 | `pip install "urllib3>=2.6.0" --break-system-packages` | Install urllib3 to suppress YOLO errors |
 | `pip uninstall opencv-python -y --break-system-packages` | Remove regular OpenCV (not needed) |
+| `pip install opencv-contrib-python --break-system-packages` | Install OpenCV Contrib |
 | `sudo apt-get install imx500-all` | Only required when using the Pi AI Camera |
 
 ---
