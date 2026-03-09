@@ -5,8 +5,9 @@ After=network.target
 [Service]
 User=hornet
 WorkingDirectory=/home/hornet/hornet-radar
-ExecStart=/home/hornet/hornet-radar/bin/python /home/hornet/hornet-radar/main.py
+ExecStart=python /home/hornet/hornet-radar/main.py
 Restart=always
+RuntimeMaxSec=12h
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
