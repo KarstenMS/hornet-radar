@@ -7,7 +7,7 @@ import logging
 import os
 import cv2
 from typing import Dict
-
+from cleanup import cleanup_events
 from config import (
     CAMERA_FPS,
     CAMERA_TYPE,
@@ -206,6 +206,7 @@ def main():
     )
     
     ensure_directories(IMAGES_DIR, VIDEOS_DIR, EVENTS_DIR)
+    cleanup_events()
 
     source = resolve_source(args)
     motion_gate = MotionGate()

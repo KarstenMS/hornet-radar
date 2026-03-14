@@ -40,6 +40,8 @@ MAX_YOLO_ATTEMPTS = 3
 
 # --- Save event ---
 THUMB_SIZE = 192, 108                                           # Pixel-Size for thumbnails. Default: 192, 108 
+EVENT_RETENTION_DAYS = 180                                      # Number of days to keep local event data before deletion
+MAX_EVENT_STORAGE_GB = 5                                        # Maximum storage for events in GB. If exceeded, oldest events will be deleted. 
 
 # --- Vector settings ---
 VECTOR_WINDOW = 5                                               # Number of frames for approach/departure vector calculation
