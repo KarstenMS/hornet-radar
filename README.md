@@ -43,7 +43,9 @@ and open a terminal window to run the following commands:
 |-------|------------|
 | `sudo apt-get update && sudo apt-get upgrade` | Upgrade your Pi to the latest version |
 | `git clone https://github.com/KarstenMS/hornet-radar.git` | Clone the latest hornet-radar repository |
-| `pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu --break-system-packages` | Install Torch & Torchvision |
+| `pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu --break-system-packages` | Install Torch & Torchvision on Pi5 |
+| `pip install torch==2.6.0 --break-system-packages --break-system-packages` | Install Torch on Pi4 |
+| `pip install torchvision==0.21 --break-system-packages --break-system-packages` | Install Torchvision on Pi4 |
 | `pip install yolov5 --break-system-packages` | Install YOLOv5 and Ultralytics |
 | `pip install "urllib3>=2.6.0" --break-system-packages` | Install urllib3 to suppress YOLO errors |
 | `pip uninstall opencv-python -y --break-system-packages` | Remove regular OpenCV (not needed) |
