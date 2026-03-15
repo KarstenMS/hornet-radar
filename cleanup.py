@@ -29,6 +29,7 @@ def cleanup_events():
     1. Delete events older than EVENT_RETENTION_DAYS
     2. Ensure directory stays under MAX_EVENT_STORAGE_GB
     """
+    logger.info("[Cleanup] Starting cleanup of old events")
 
     if not os.path.exists(EVENTS_DIR):
         return
@@ -102,3 +103,5 @@ def cleanup_events():
 
     if deleted > 0:
         logger.info("[Cleanup] Removed {deleted} old events")
+    else:
+        logger.info("[Cleanup] No old events to remove")
