@@ -69,8 +69,9 @@ def cleanup_events():
                 else:
                     os.remove(e["path"])
                 deleted += 1
+                logger.info("Deleted event for storage cleanup: %s", e["path"]) 
             except Exception as err:
-                logger.info("[Cleanup] Failed deleting {e['path']}: {err}")
+                logger.warning("Failed deleting %s: %s", e["path"], err)
                
 
     # refresh list
@@ -97,11 +98,12 @@ def cleanup_events():
 
                 total_size -= e["size"]
                 deleted += 1
+                logger.info("Deleted event for storage cleanup: %s", e["path"])
 
             except Exception as err:
-                logger.info("[Cleanup] Failed deleting {e['path']}: {err}")
+                logger.warning("Failed deleting %s: %s", e["path"], err)
 
     if deleted > 0:
-        logger.info("[Cleanup] Removed {deleted} old events")
+        logger.info("[Cleanup] Removed %s old events", deleted)
     else:
         logger.info("[Cleanup] No old events to remove")
