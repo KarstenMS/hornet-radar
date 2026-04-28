@@ -36,7 +36,7 @@ PICAM_FORMAT = "XRGB8888"                                       # XRGB8888 or RG
 
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.75                                     # Optional: confidence threshold for detections
-MAX_YOLO_ATTEMPTS = 3
+MAX_YOLO_ATTEMPTS = 2
 
 # --- Save event ---
 THUMB_SIZE = 192, 108                                           # Pixel-Size for thumbnails. Default: 192, 108 
@@ -56,13 +56,13 @@ TABLE_NAME = "sightings"
 # --- Motion_Gate Tracking settings ---
 TRACKER_TYPE = "AUTO"                                           # Available: "KCF", "CSRT", "MOSSE", "AUTO"
 FRAME_SKIP = 3                                                  # analyse only every 3rd frame (performance)
-TRACKING_STABLE_FRAMES = 5                                      # Number of frames to be stable before running detection
+TRACKING_STABLE_FRAMES = 8                                      # Number of frames to be stable before running detection
 
 # --- Tracker Geometry Abort Thresholds (Abort Criterion) ---
 
 TRACKER_INIT_MAX_AREA_RATIO = 0.15                              # 15% of frame
 TRACKER_MAX_AREA_RATIO = 0.35                                   # >35% of frame = to big for a hornet
-TRACKER_MIN_AREA_RATIO = 0.0005                                 # <0.05% = Noise
+TRACKER_MIN_AREA_RATIO = 0.002                                  # <0.2% = too small to be a hornet (~6300 px at 2048x1536)
 TRACKER_MAX_ASPECT_RATIO = 5.0                                  # extreme wide
 TRACKER_MIN_ASPECT_RATIO = 0.2                                  # extreme small  
 TRACKER_EDGE_MARGIN_RATIO = 0.02                                # 2% marge from edge
@@ -72,8 +72,8 @@ MIN_POST_CONFIRM_FRAMES = 6                                     # e.g 6–10
 
 # -- Motion Settings ---
 MOTION_HISTORY = 300                                            # Amount of frames used for Backgroundmodel (low = faster, high = slower)
-MOTION_VAR_THRESHOLD = 25                                       # Sensibility of motion detection
-MOTION_MIN_AREA = 500                                           # Min pixel ara for being relevant
-MOTION_KERNEL_SIZE = 3                                          # Size of morphological filtering 
+MOTION_VAR_THRESHOLD = 40                                       # Sensibility of motion detection (higher = less sensitive to slow/small movers)
+MOTION_MIN_AREA = 3000                                          # Min pixel area for being relevant (~0.1% of 2048x1536, filters ants)
+MOTION_KERNEL_SIZE = 5                                          # Size of morphological filtering (larger = erodes small blobs like ants before area check)
 
 

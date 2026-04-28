@@ -360,14 +360,14 @@ class MotionGate:
         aspect = w / h if h > 0 else 0
 
 
-        # Always apply max-area check
+        # Always apply size bounds
         if area_ratio > TRACKER_MAX_AREA_RATIO:
             return False
+        if area_ratio < TRACKER_MIN_AREA_RATIO:
+            return False
 
-        # After confirmation also apply lower bounds and aspect ratio checks
+        # After confirmation also apply aspect ratio and edge checks
         if self.tracking_state.confirmed:
-            if area_ratio < TRACKER_MIN_AREA_RATIO:
-                return False
             if aspect > TRACKER_MAX_ASPECT_RATIO or aspect < TRACKER_MIN_ASPECT_RATIO:
                 return False
 
