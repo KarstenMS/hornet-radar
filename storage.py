@@ -39,10 +39,13 @@ def upload_image_to_supabase(image_path: str, image_name: str, *, is_thumb: bool
     data = path.read_bytes()
     headers = _auth_headers("image/jpeg")
 
-    # Prefer PUT (recommended), fall back to POST
-    response = requests.put(upload_url, headers=headers, data=data)
-    if response.status_code not in (200, 201):
-        response = requests.post(upload_url, headers=headers, data=data)
+    try:
+        response = requests.put(upload_url, headers=headers, data=data, timeout=15)
+        if response.status_code not in (200, 201):
+            response = requests.post(upload_url, headers=headers, data=data, timeout=15)
+    except requests.exceptions.RequestException as e:
+        logger.warning("Upload error for %s: %s", image_name, e)
+        return None
 
     if response.status_code in (200, 201):
         public_url = upload_url.replace("/object/", "/object/public/")
@@ -64,7 +67,12 @@ def upload_json_to_supabase(data: Dict[str, Any]) -> bool:
     json_url = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"
     headers = _auth_headers("application/json")
 
-    response = requests.post(json_url, headers=headers, json=data)
+    try:
+        response = requests.post(json_url, headers=headers, json=data, timeout=15)
+    except requests.exceptions.RequestException as e:
+        logger.warning("JSON upload error: %s", e)
+        return False
+
     if response.status_code == 201:
         logger.info("Uploaded JSON record")
         return True

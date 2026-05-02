@@ -1,12 +1,10 @@
 """Hornet Radar: CLI entry point that routes frames into <MotionGate> and persists events."""
 
 import argparse
-from cProfile import label
-from html import parser
 import logging
 import os
+import threading
 import cv2
-from typing import Dict
 from cleanup import cleanup_events
 from config import (
     CAMERA_FPS,
@@ -110,7 +108,7 @@ def process_camera(motion_gate: MotionGate) -> None:
 
             if event and event.confidence >= CONFIDENCE_THRESHOLD:
                 save_event(event, event.frame)
-                upload_event(event)
+                threading.Thread(target=upload_event, args=(event,), daemon=True).start()
 
             # --- Optional debug window ---
             if SHOW_DEBUG_VIDEO:
