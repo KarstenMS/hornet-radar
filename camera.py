@@ -71,8 +71,10 @@ class Camera:
             "ScalerCrop": scaler_crop,
             "AeEnable": True,
             "AwbEnable": True,
-            "NoiseReductionMode": 1,  # Fast
         }
+
+        if "NoiseReductionMode" in available_controls:
+            controls_dict["NoiseReductionMode"] = 1  # Fast
 
         # Pin AWB to a daylight preset so all Pis render colour the same way
         # outdoors instead of each one drifting under Auto.

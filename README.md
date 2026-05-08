@@ -54,22 +54,39 @@ and open a terminal window to run the following commands:
 
 ### ⚙️ Hornet‑radar configuration
 
-Edit the configuration file:
+Per-Pi values (PI_ID, location, focus distance, Supabase key) live in
+`config_local.py`, which is **gitignored** so your edits survive `git pull`.
+Shared defaults live in `config.py` and update normally with each release.
+
+Create your local config from the template and edit it:
+
+```bash
+cd /home/hornet/hornet-radar
+cp config_local.example.py config_local.py
+nano config_local.py
+```
+
+| Per-Pi option (config_local.py)               | Description                                                                                                    |
+|-----------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| PI_ID                                         | Unique identification number for your bait station                                                             |
+| LATITUDE / LONGITUDE                          | Used to position the bait station on the https://hornet-radar.com/en/map                                       |
+| FOCUS_DISTANCE_CM                             | Camera Module 3 only: distance in cm to the bait/hive entrance (ignored on IMX500 camera)                             |
+| SHOW_DEBUG_VIDEO                              | Useful for testing and troubleshooting; should be False in production                                          |
+| **SUPABASE_KEY**                              | Contact admin@hornet-radar.com to receive your personal upload key                                             |
+
+Other settings — camera type, resolution, detection thresholds, paths — live in
+`config.py`. Edit them only if you need to deviate from the defaults:
 
 ```bash
 nano /home/hornet/hornet-radar/config.py
 ```
 
-| Necessary Options                             |                                                                                                 Description    |
+| Shared option (config.py)                     | Description                                                                                                    |
 |-----------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| PI_ID                                         | Unique identification number for your bait station                                                             |
-| LATITUDE / LONGITUTE                          | Used to position the bait station on the https://hornet-radar.com/en/map                                       |
-| SHOW_DEBUG_VIDEO                              | Useful for testing and troubleshooting; should be False in production                                          |
 | ROOT                                          | Change only if you chose a different username                                                                  |
-| CAMERA_TYPE                                   | Choose between Pi Camera or Webcam                                                                             |    
+| CAMERA_TYPE                                   | Choose between Pi Camera or Webcam                                                                             |
 | CAMERA_WIDTH / CAMERA_HEIGHT / CAMERA_FPS     | Reduce values on older Raspberry Pi models                                                                     |
 | CONFIDENCE_THRESHOLD                          | Increase if you get many false positives                                                                       |
-| **SUPABASE_KEY**                              | Contact admin@hornet-radar.com to receive your personal upload key                                             |
 
 All other settings can remain at their default values initially.
 
@@ -90,7 +107,7 @@ Optional flags:
 Once everything works as expected, create a systemd service to automatically start main.py after every reboot and every 12 hours.
 
 Steps:
-- Set SHOW_DEBUG_VIDEO = False in config.py
+- Set SHOW_DEBUG_VIDEO = False in config_local.py
 - Verify the service file:
   ```bash
   nano /home/hornet/hornet-radar/hornet-radar.service
