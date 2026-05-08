@@ -33,6 +33,7 @@ WEBCAM_INDEX = 0
 
 # Picamera2 only
 PICAM_FORMAT = "XRGB8888"                                       # XRGB8888 or RGB888
+FOCUS_DISTANCE_CM = 20                                          # Camera Module 3: focus distance in cm to the target (e.g. hive entrance). Set per-Pi. Ignored on IMX500 (fixed focus).
 
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.75                                     # Optional: confidence threshold for detections
@@ -77,3 +78,11 @@ MOTION_MIN_AREA = 3000                                          # Min pixel area
 MOTION_KERNEL_SIZE = 5                                          # Size of morphological filtering (larger = erodes small blobs like ants before area check)
 
 
+# --- Per-Pi overrides ---
+# Anything defined in config_local.py wins over the defaults above.
+# config_local.py is gitignored, so per-Pi values survive `git pull`.
+# See config_local.example.py for the template.
+try:
+    from config_local import *  # noqa: F401, F403
+except ImportError:
+    pass

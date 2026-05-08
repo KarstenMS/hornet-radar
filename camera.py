@@ -7,6 +7,7 @@ from config import (
     CAMERA_HEIGHT,
     CAMERA_TYPE,
     CAMERA_WIDTH,
+    FOCUS_DISTANCE_CM,
     PICAM_FORMAT,
     WEBCAM_INDEX,
 )
@@ -43,24 +44,55 @@ class Camera:
         import time
 
         self.picam2 = Picamera2()
-        sensor_size = self.picam2.sensor_resolution
-        full_crop = (0, 0, sensor_size[0], sensor_size[1])
+        sensor_w, sensor_h = self.picam2.sensor_resolution
+        model = self.picam2.camera_properties.get("Model", "unknown")
+        available_controls = self.picam2.camera_controls
+
+        # Center-crop the sensor to the output aspect ratio. A 16:9 sensor
+        # (Camera Module 3: 4608x2592) asked for a 4:3 frame otherwise
+        # produces awkward scaling/letterboxing. The IMX500 is already 4:3,
+        # so this is a no-op there.
+        out_aspect = CAMERA_WIDTH / CAMERA_HEIGHT
+        if sensor_w / sensor_h > out_aspect:
+            crop_w = int(sensor_h * out_aspect)
+            crop_h = sensor_h
+        else:
+            crop_w = sensor_w
+            crop_h = int(sensor_w / out_aspect)
+        scaler_crop = (
+            (sensor_w - crop_w) // 2,
+            (sensor_h - crop_h) // 2,
+            crop_w,
+            crop_h,
+        )
 
         controls_dict = {
             "FrameRate": CAMERA_FPS,
-            "ScalerCrop": full_crop,
+            "ScalerCrop": scaler_crop,
             "AeEnable": True,
             "AwbEnable": True,
+            "NoiseReductionMode": 1,  # Fast
         }
 
-        # Get Controls and check for Autofocus support
-        available_controls = self.picam2.camera_controls
+        # Pin AWB to a daylight preset so all Pis render colour the same way
+        # outdoors instead of each one drifting under Auto.
+        if "AwbMode" in available_controls:
+            controls_dict["AwbMode"] = 5  # Daylight
 
-        # Set Autofocus to continuous if supported, otherwise fixed focus (default)
-        if "AfMode" in available_controls:
-            controls_dict["AfMode"] = 2      # Continuous
-            if "AfSpeed" in available_controls:
-                controls_dict["AfSpeed"] = 1  # Fast
+        # Manual focus is far more reliable than continuous AF on a fixed-
+        # mount camera: continuous AF hunts whenever a hornet flies through
+        # and produces blurry frames during each refocus cycle. LensPosition
+        # is in dioptres (1 / distance_in_metres).
+        if "AfMode" in available_controls and "LensPosition" in available_controls:
+            lens_position = 100.0 / max(FOCUS_DISTANCE_CM, 1)
+            controls_dict["AfMode"] = 0  # Manual
+            controls_dict["LensPosition"] = lens_position
+            logger.info(
+                "Camera %s: manual focus at %d cm (LensPosition=%.2f)",
+                model, FOCUS_DISTANCE_CM, lens_position,
+            )
+        else:
+            logger.info("Camera %s: fixed focus (no AF support)", model)
 
         config = self.picam2.create_video_configuration(
             main={
@@ -72,7 +104,7 @@ class Camera:
 
         self.picam2.configure(config)
         self.picam2.start()
-        time.sleep(1)
+        time.sleep(2)  # Allow AE/AWB to converge
 
     def read(self):
         """Read a single frame.
