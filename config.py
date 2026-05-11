@@ -44,7 +44,8 @@ COLOUR_GAINS = (1.6, 2.0)                                       # (red_gain, blu
 
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.90                                     # Optional: confidence threshold for detections
-MAX_YOLO_ATTEMPTS = 2
+MAX_YOLO_ATTEMPTS = 8                                           # Max YOLO inferences per track before giving up on confirmation.
+YOLO_RETRY_INTERVAL_FRAMES = 5                                  # Frames to wait between consecutive YOLO attempts (so each retry sees a meaningfully different view).
 
 # --- Save event ---
 THUMB_SIZE = 192, 108                                           # Pixel-Size for thumbnails. Default: 192, 108 

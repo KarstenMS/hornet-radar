@@ -21,6 +21,7 @@ from config import (
     TRACKER_MIN_ASPECT_RATIO,
     TRACKER_TYPE,
     TRACKING_STABLE_FRAMES,
+    YOLO_RETRY_INTERVAL_FRAMES,
 )
 from detection import load_model, run_detection
 from tracking_state import TrackingState
@@ -261,16 +262,32 @@ class MotionGate:
 
         if  self.tracking_state.frames_tracked < TRACKING_STABLE_FRAMES:
             return
-        
+
+        # Space retries out so each YOLO call sees a meaningfully different view
+        # (hornet shifts, micro-motion, exposure adjustments) rather than running
+        # back-to-back on essentially identical frames.
+        if self.tracking_state.yolo_attempts > 0:
+            frames_since_last = (
+                self.tracking_state.frames_tracked
+                - self.tracking_state.last_yolo_at_frames_tracked
+            )
+            if frames_since_last < YOLO_RETRY_INTERVAL_FRAMES:
+                return
+
         if self.tracking_state.yolo_attempts >= MAX_YOLO_ATTEMPTS:
             self.tracking_state.reset()
-            return 
+            return
 
         detections = run_detection(frame, self.model)
 
-        print(f"Detection done, found {len(detections)} objects")
+        logger.debug("YOLO attempt %d/%d on track @ frame %d: %d detection(s)",
+                     self.tracking_state.yolo_attempts + 1,
+                     MAX_YOLO_ATTEMPTS,
+                     self.tracking_state.frames_tracked,
+                     len(detections))
         debug["yolo_ran"] = True
         self.tracking_state.yolo_attempts += 1
+        self.tracking_state.last_yolo_at_frames_tracked = self.tracking_state.frames_tracked
 
         if not detections:
             return

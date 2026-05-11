@@ -37,6 +37,7 @@ class TrackingState:
     confirmed_confidence: Optional[float] = None
     detection_done: bool = False
     yolo_attempts: int = 0
+    last_yolo_at_frames_tracked: int = 0
 
     confirmed_frame: Any = None
     confirmed_frame_shape: Any = None
