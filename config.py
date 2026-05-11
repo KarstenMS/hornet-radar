@@ -35,6 +35,13 @@ WEBCAM_INDEX = 0
 PICAM_FORMAT = "RGB888"                                         # Picamera2 naming is reversed vs numpy: "RGB888" actually yields BGR arrays, matching cv2.VideoCapture.
 FOCUS_DISTANCE_CM = 20                                          # Camera Module 3: focus distance in cm to the target (e.g. hive entrance). Set per-Pi. Ignored on IMX500 (fixed focus).
 
+# --- White balance ---
+# Auto AWB drifts under a saturated background (e.g. greenscreen bait surface) and
+# differs per camera unit, so manual ColourGains is the more reliable default.
+AWB_ENABLE = False                                              # True = use AWB_MODE preset; False = lock to COLOUR_GAINS below.
+AWB_MODE = 5                                                    # libcamera preset (used only if AWB_ENABLE=True): 0=Auto 1=Incandescent 2=Tungsten 3=Fluorescent 4=Indoor 5=Daylight 6=Cloudy
+COLOUR_GAINS = (1.6, 2.0)                                       # (red_gain, blue_gain). Increase blue to cool the image (less yellow). Tune per-Pi.
+
 # --- Detection Settings ---
 CONFIDENCE_THRESHOLD = 0.75                                     # Optional: confidence threshold for detections
 MAX_YOLO_ATTEMPTS = 2

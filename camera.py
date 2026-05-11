@@ -3,10 +3,13 @@
 import logging
 import cv2
 from config import (
+    AWB_ENABLE,
+    AWB_MODE,
     CAMERA_FPS,
     CAMERA_HEIGHT,
     CAMERA_TYPE,
     CAMERA_WIDTH,
+    COLOUR_GAINS,
     FOCUS_DISTANCE_CM,
     PICAM_FORMAT,
     WEBCAM_INDEX,
@@ -70,16 +73,25 @@ class Camera:
             "FrameRate": CAMERA_FPS,
             "ScalerCrop": scaler_crop,
             "AeEnable": True,
-            "AwbEnable": True,
+            "AwbEnable": AWB_ENABLE,
         }
 
         if "NoiseReductionMode" in available_controls:
             controls_dict["NoiseReductionMode"] = 1  # Fast
 
-        # Pin AWB to a daylight preset so all Pis render colour the same way
-        # outdoors instead of each one drifting under Auto.
-        if "AwbMode" in available_controls:
-            controls_dict["AwbMode"] = 5  # Daylight
+        # Auto AWB drifts per-camera and reacts to the greenscreen background.
+        # Manual ColourGains (with AWB off) renders consistently across Pis.
+        if AWB_ENABLE:
+            if "AwbMode" in available_controls:
+                controls_dict["AwbMode"] = AWB_MODE
+                logger.info("Camera %s: AWB preset mode=%d", model, AWB_MODE)
+        else:
+            if "ColourGains" in available_controls:
+                controls_dict["ColourGains"] = COLOUR_GAINS
+                logger.info(
+                    "Camera %s: manual ColourGains red=%.2f blue=%.2f",
+                    model, COLOUR_GAINS[0], COLOUR_GAINS[1],
+                )
 
         # Manual focus is far more reliable than continuous AF on a fixed-
         # mount camera: continuous AF hunts whenever a hornet flies through

@@ -16,6 +16,10 @@ LONGITUDE = 0.0
 # --- Camera ---
 FOCUS_DISTANCE_CM = 20  # Camera Module 3 only; ignored on IMX500
 
+# --- White balance (tune per-Pi) ---
+# AWB_ENABLE = False             # set True to use AWB_MODE preset instead of manual gains
+# COLOUR_GAINS = (1.6, 2.0)      # (red, blue); raise blue to cool the image (reduce yellow)
+
 # --- Runtime ---
 SHOW_DEBUG_VIDEO = False
 
