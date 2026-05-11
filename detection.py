@@ -3,6 +3,7 @@
 import logging
 import warnings
 from typing import Any, Dict, List
+import cv2
 import torch
 from config import YOLO_DIR, MODEL_DIR, CONFIDENCE_THRESHOLD
 
@@ -32,7 +33,10 @@ def run_detection(image, model) -> List[Dict[str, Any]]:
     Returns:
         A list of dicts: {bbox, confidence, class_id}.
     """
-    results = model(image)
+    # YOLOv5's hub AutoShape expects RGB for numpy input; frames throughout
+    # the pipeline are BGR (cv2 / Picamera2 "RGB888" / cv2.VideoCapture).
+    rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = model(rgb)
     predictions = results.pred[0]
 
     return parse_predictions(predictions)

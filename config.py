@@ -32,7 +32,7 @@ CAMERA_FPS = 10
 WEBCAM_INDEX = 0
 
 # Picamera2 only
-PICAM_FORMAT = "XRGB8888"                                       # XRGB8888 or RGB888
+PICAM_FORMAT = "RGB888"                                         # Picamera2 naming is reversed vs numpy: "RGB888" actually yields BGR arrays, matching cv2.VideoCapture.
 FOCUS_DISTANCE_CM = 20                                          # Camera Module 3: focus distance in cm to the target (e.g. hive entrance). Set per-Pi. Ignored on IMX500 (fixed focus).
 
 # --- Detection Settings ---

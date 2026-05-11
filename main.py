@@ -8,7 +8,6 @@ import cv2
 from cleanup import cleanup_events
 from config import (
     CAMERA_FPS,
-    CAMERA_TYPE,
     CONFIDENCE_THRESHOLD,
     EVENTS_DIR,
     IMAGES_DIR,
@@ -99,10 +98,6 @@ def process_camera(motion_gate: MotionGate) -> None:
             frame = cam.read()
             if frame is None:
                 continue
-
-            # Picamera returns RGB → OpenCV expects BGR
-            if CAMERA_TYPE == "picamera2":
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
             event, debug = motion_gate.process_frame(frame, FrameSource.CAMERA)
 
