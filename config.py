@@ -43,7 +43,7 @@ AWB_MODE = 5                                                    # libcamera pres
 COLOUR_GAINS = (1.6, 2.0)                                       # (red_gain, blue_gain). Increase blue to cool the image (less yellow). Tune per-Pi.
 
 # --- Detection Settings ---
-CONFIDENCE_THRESHOLD = 0.75                                     # Optional: confidence threshold for detections
+CONFIDENCE_THRESHOLD = 0.90                                     # Optional: confidence threshold for detections
 MAX_YOLO_ATTEMPTS = 2
 
 # --- Save event ---
