@@ -47,12 +47,13 @@ def process_images(motion_gate: MotionGate):
             logger.warning("Could not read image: %s", path)
             continue
 
-        event, debug = motion_gate.process_frame(frame, FrameSource.IMAGE)
+        events, debug = motion_gate.process_frame(frame, FrameSource.IMAGE)
         logger.debug("Debug: %s", debug)
 
-        if event and event.confidence >= CONFIDENCE_THRESHOLD:
-            save_event(event, frame)
-            upload_event(event)
+        for event in events:
+            if event.confidence >= CONFIDENCE_THRESHOLD:
+                save_event(event, frame)
+                upload_event(event)
 
 def process_videos(motion_gate: MotionGate):
     """Process all .mp4 files from VIDEOS_DIR."""
@@ -77,13 +78,15 @@ def process_videos(motion_gate: MotionGate):
 
             
 
-            event, debug = motion_gate.process_frame(frame, FrameSource.VIDEO)
+            events, debug = motion_gate.process_frame(frame, FrameSource.VIDEO)
             logger.debug("Debug: %s", debug)
 
-            if event and event.confidence >= CONFIDENCE_THRESHOLD:
-                save_event(event, frame)
-                upload_event(event)
-                break  # stop after first confirmed event
+            confirmed = [e for e in events if e.confidence >= CONFIDENCE_THRESHOLD]
+            if confirmed:
+                for event in confirmed:
+                    save_event(event, frame)
+                    upload_event(event)
+                break  # stop after first confirmed frame
 
         cap.release()
 
@@ -99,11 +102,12 @@ def process_camera(motion_gate: MotionGate) -> None:
             if frame is None:
                 continue
 
-            event, debug = motion_gate.process_frame(frame, FrameSource.CAMERA)
+            events, debug = motion_gate.process_frame(frame, FrameSource.CAMERA)
 
-            if event and event.confidence >= CONFIDENCE_THRESHOLD:
-                save_event(event, event.frame)
-                threading.Thread(target=upload_event, args=(event,), daemon=True).start()
+            for event in events:
+                if event.confidence >= CONFIDENCE_THRESHOLD:
+                    save_event(event, event.frame)
+                    threading.Thread(target=upload_event, args=(event,), daemon=True).start()
 
             # --- Optional debug window ---
             if SHOW_DEBUG_VIDEO:
@@ -148,40 +152,34 @@ def draw_debug_overlay(frame, debug: dict) -> None:
         (0, 255, 255) if debug.get("tracking") else (150, 150, 150)
     )
 
-    line(f"Frames tracked: {debug.get('frames_tracked', 0)}")
+    tracks = debug.get("tracks", []) or []
+    line(f"Tracks: {len(tracks)}")
     line(f"YOLO run: {'YES' if debug.get('yolo_ran') else 'NO'}")
 
-    plausible = debug.get("bbox_plausible")
-    if plausible is not None:
-        line(
-            f"BBox plausible: {'YES' if plausible else 'NO'}",
-            (0, 255, 0) if plausible else (0, 0, 255)
-        )
+    # Raw motion boxes (thin red) for debugging the detector.
+    for (x, yb, w, h) in debug.get("motion_boxes", []) or []:
+        cv2.rectangle(frame, (x, yb), (x + w, yb + h), (0, 0, 255), 1)
 
-    tracking_bbox = debug.get("tracking_bbox")
-    confirmed = debug.get("confirmed", False)
+    # One box per active track, colored by state.
+    for t in tracks:
+        x, y, w, h = map(int, t["bbox"])
 
-    if tracking_bbox:
-        x, y, w, h = map(int, tracking_bbox)
-
-        if confirmed:
-            label = debug.get("confirmed_label", "?")
-            conf = debug.get("confirmed_conf", 0.0)
+        if t.get("confirmed"):
+            label = t.get("label", "?")
+            conf = t.get("conf") or 0.0
             color = (0, 0, 255) if label == "AH" else (0, 255, 0)
-            text = f"{label} {conf:.2f}"
+            text = f"#{t['id']} {label} {conf:.2f}"
         else:
-            color = (255, 0, 0) 
-            text = "TRACKER"
+            color = (255, 200, 0)  # tracked, not yet confirmed
+            text = f"#{t['id']} TRACK"
+
+        if t.get("coasting"):
+            text += " (coast)"
 
         cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-
         (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
         cv2.rectangle(frame, (x, y - th - 6), (x + tw + 4, y), color, -1)
         cv2.putText(frame, text, (x + 2, y - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-     
-        for (x, yb, w, h) in debug.get("motion_boxes", []) or []:
-                cv2.rectangle(frame, (x, yb), (x + w, yb + h), (0, 0, 255), 1)
-                cv2.putText(frame, "MOTION", (x, yb - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
 
 def main():
     """CLI main function."""

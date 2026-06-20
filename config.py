@@ -63,9 +63,19 @@ BUCKET_NAME = "hornet-detections"
 TABLE_NAME = "sightings"
 
 # --- Motion_Gate Tracking settings ---
-TRACKER_TYPE = "AUTO"                                           # Available: "KCF", "CSRT", "MOSSE", "AUTO"
-FRAME_SKIP = 3                                                  # analyse only every 3rd frame (performance)
-TRACKING_STABLE_FRAMES = 8                                      # Number of frames to be stable before running detection
+TRACKER_TYPE = "AUTO"                                           # Available: "KCF", "CSRT", "MOSSE", "AUTO" (legacy single-tracker; unused by the multi-tracker)
+FRAME_SKIP = 3                                                  # Video mode: analyse only every 3rd frame. Camera mode runs motion detection on every frame.
+TRACKING_STABLE_FRAMES = 8                                      # Number of frames a track must exist before running YOLO confirmation
+
+# --- Multi-object tracking (camera mode) ---
+# The camera path tracks every moving insect by associating MOG2 motion boxes to
+# persistent tracks each frame (greedy IoU + proximity, see matching.py). No
+# OpenCV appearance tracker is used, so motion detection can run every frame.
+MOTION_DOWNSCALE = 0.5                                          # Downscale factor for MOG2 only (0.5 = quarter the pixels => much faster on a Pi 5). Boxes are scaled back to full res. Use 1.0 to disable.
+MATCH_IOU_THRESHOLD = 0.2                                       # Min IoU to associate a motion box with an existing track (overlap match)
+MATCH_MAX_DISTANCE_RATIO = 0.05                                 # Proximity fallback: max center distance as a fraction of frame width (~100 px at 2048) for fast movers whose boxes don't overlap
+MAX_COAST_FRAMES = 8                                            # Keep a track alive this many frames without a matched box (handles brief occlusion / insect sitting still at the bait). Also enables re-association on reappearance.
+YOLO_MATCH_IOU = 0.3                                            # Min IoU between a YOLO detection and a track's box to confirm that specific track
 
 # --- Tracker Geometry Abort Thresholds (Abort Criterion) ---
 

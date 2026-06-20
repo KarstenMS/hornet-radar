@@ -4,60 +4,62 @@ import time
 import logging
 from config import (
     FRAME_SKIP,
+    MATCH_IOU_THRESHOLD,
+    MATCH_MAX_DISTANCE_RATIO,
+    MAX_COAST_FRAMES,
     MAX_YOLO_ATTEMPTS,
-    MIN_POST_CONFIRM_FRAMES,
     MODEL_NAME,
+    MOTION_DOWNSCALE,
     MOTION_HISTORY,
     MOTION_KERNEL_SIZE,
     MOTION_MIN_AREA,
     MOTION_VAR_THRESHOLD,
     PI_ID,
-    TRACKER_EDGE_MARGIN_RATIO,
     TRACKER_INIT_MAX_AREA_RATIO,
-    TRACKER_MAX_AREA_RATIO,
-    TRACKER_MAX_ASPECT_RATIO,
-    TRACKER_MAX_INVALID_FRAMES,
     TRACKER_MIN_AREA_RATIO,
-    TRACKER_MIN_ASPECT_RATIO,
-    TRACKER_TYPE,
     TRACKING_STABLE_FRAMES,
+    YOLO_MATCH_IOU,
     YOLO_RETRY_INTERVAL_FRAMES,
 )
 from detection import load_model, run_detection
-from tracking_state import TrackingState
+from track import Track
+from matching import match, iou
 from event import DetectionEvent
 from sources import FrameSource
-from typing import Tuple, Optional, Dict
 from motion_vectors import vector_from_points
+from typing import List, Tuple, Dict
 
 logger = logging.getLogger(__name__)
+
 
 class MotionGate:
     """Main stateful pipeline.
 
     Responsibilities:
-        - motion detection (MOG2)
-        - object tracking (OpenCV tracker)
-        - trigger YOLO once tracking is stable
-        - create <DetectionEvent> once tracking ends after confirmation
+        - motion detection (MOG2), run on every camera frame
+        - multi-object tracking by associating motion boxes to persistent tracks
+        - trigger YOLO per track once it is stable, to confirm species
+        - create a <DetectionEvent> for each confirmed track when it ends
 
-    The public API is <process_frame>.
+    The public API is <process_frame>. It returns a *list* of events because
+    several tracks can finalize on the same frame.
     """
 
     def __init__(self) -> None:
         # --- YOLO ---
         self.model = load_model()
 
-         # --- Tracking ---
-        self.tracking_state = TrackingState()
-        self.tracker = None
+        # --- Tracking ---
+        self.tracks: List[Track] = []
+        self._next_id = 0
         self.frame_count = 0
+        self.source_name = ""
 
         # --- Motion detection ---
         self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
             history=MOTION_HISTORY,
             varThreshold=MOTION_VAR_THRESHOLD,
-            detectShadows=False
+            detectShadows=False,
         )
         self.kernel = cv2.getStructuringElement(
             cv2.MORPH_ELLIPSE, (MOTION_KERNEL_SIZE, MOTION_KERNEL_SIZE)
@@ -67,29 +69,16 @@ class MotionGate:
         self.last_time = time.time()
         self.fps = 0.0
 
-    def process_frame(self, frame, source: FrameSource) -> Tuple[Optional[DetectionEvent], Dict]:
-        """Process one frame and return (event, debug).
-
-        Args:
-            frame: OpenCV frame (numpy array).
-            source: Frame origin (camera, video, image).
-
-        Returns:
-            event: A <DetectionEvent> or None
-            debug: A dict with debug values for overlays / logging
-        """
-
+    def process_frame(self, frame, source: FrameSource) -> Tuple[List[DetectionEvent], Dict]:
+        """Process one frame and return (events, debug)."""
         debug: Dict = {
             "source": source.value,
             "motion": False,
             "tracking": False,
-            "frames_tracked": 0,
             "yolo_ran": False,
-            "confirmed": False,
-            "tracking_bbox": None,
             "motion_boxes": [],
+            "tracks": [],
             "fps": None,
-            "bbox_plausible": None,
         }
 
         if source == FrameSource.IMAGE:
@@ -103,50 +92,42 @@ class MotionGate:
         if source == FrameSource.CAMERA:
             self.source_name = "Camera"
             return self._process_camera(frame, debug)
-        
-        raise ValueError(f"Unsupported FrameSource: {source}")    
 
-    def _process_camera(self, frame, debug: Dict) -> Tuple[Optional[DetectionEvent], Dict]:
-        """Camera mode: motion-gate + tracker + YOLO trigger."""
-        event = None  
+        raise ValueError(f"Unsupported FrameSource: {source}")
 
+    def _process_camera(self, frame, debug: Dict) -> Tuple[List[DetectionEvent], Dict]:
+        """Camera mode: per-frame motion detection + multi-track + per-track YOLO."""
         now = time.time()
         dt = now - self.last_time
         if dt > 0:
             self.fps = 1.0 / dt
         self.last_time = now
         debug["fps"] = self.fps
-
-        # Frame skipping for motion detection--
         self.frame_count += 1
-        process_this_frame = (self.frame_count % FRAME_SKIP == 0)
 
-        # --- Motion Detection (only every N Frames) ---
-        motion_boxes = []
-        if process_this_frame:
-            motion_boxes = self._update_motion(frame, debug)
+        # Motion detection runs on EVERY frame now (no appearance tracker to
+        # bridge the gaps). It is cheap because MOG2 runs on a downscaled frame.
+        motion_boxes = self._update_motion(frame, debug)
 
-        # --- Tracking (always)
-        event = self._update_tracking(frame, motion_boxes, debug)      
-        if event:
-            return event, debug
-        
-        # -- Yolo (if tracking, stable, and not done yet)
+        # Associate boxes to tracks, spawn/coast/kill, collect finalized events.
+        events = self._update_tracks(frame, motion_boxes, debug)
+
+        # Confirm stable, still-unconfirmed tracks (one shared YOLO call/frame).
         self._maybe_run_yolo(frame, debug)
 
-        return None, debug
+        return events, debug
 
-    def _process_video(self, frame, debug: Dict) -> Tuple[Optional[DetectionEvent], Dict]:
+    def _process_video(self, frame, debug: Dict) -> Tuple[List[DetectionEvent], Dict]:
         """Video mode: run YOLO on every Nth frame (no tracking)."""
-
         self.frame_count += 1
         if self.frame_count % FRAME_SKIP != 0:
-            return None, debug
+            return [], debug
 
         detections = run_detection(frame, self.model)
         if not detections:
-            return None, debug
-        
+            return [], debug
+
+        debug["yolo_ran"] = True
         event = DetectionEvent(
             pi_id=PI_ID,
             detections=detections,
@@ -157,17 +138,15 @@ class MotionGate:
             source=self.source_name,
             frame_shape=frame.shape[:2],
         )
+        return [event], debug
 
-        debug["yolo_ran"] = True
-        return event, debug
-
-    def _process_image(self, frame, debug: Dict) -> Tuple[Optional[DetectionEvent], Dict]:
+    def _process_image(self, frame, debug: Dict) -> Tuple[List[DetectionEvent], Dict]:
         """Image mode: run YOLO once (no tracking)."""
-   
         detections = run_detection(frame, self.model)
         if not detections:
-            return None, debug
+            return [], debug
 
+        debug["yolo_ran"] = True
         event = DetectionEvent(
             pi_id=PI_ID,
             detections=detections,
@@ -177,229 +156,169 @@ class MotionGate:
             source=self.source_name,
             frame_shape=frame.shape[:2],
         )
-
-        debug["yolo_ran"] = True
-        return event, debug
+        return [event], debug
 
     def _update_motion(self, frame, debug: Dict):
-        """Update background model and return motion bounding boxes."""
-        fg = self.bg_subtractor.apply(frame)
+        """Update background model and return motion bounding boxes (full-res coords)."""
+        scale = MOTION_DOWNSCALE
+        if scale != 1.0:
+            small = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        else:
+            small = frame
+
+        fg = self.bg_subtractor.apply(small)
         fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, self.kernel)
 
         contours, _ = cv2.findContours(fg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        inv = 1.0 / scale
         boxes = []
         for c in contours:
-            if cv2.contourArea(c) < MOTION_MIN_AREA:
+            x, y, w, h = cv2.boundingRect(c)
+            # Scale the box back up to full-resolution coordinates.
+            x, y, w, h = int(x * inv), int(y * inv), int(w * inv), int(h * inv)
+            if w * h < MOTION_MIN_AREA:
                 continue
-            boxes.append(cv2.boundingRect(c))
+            boxes.append((x, y, w, h))
 
         debug["motion"] = bool(boxes)
         debug["motion_boxes"] = boxes
         return boxes
 
-    def _update_tracking(self, frame, motion_boxes, debug: Dict) -> Optional[DetectionEvent]:
-        """Start/update tracker. Finalize confirmed events when tracking ends."""
-        # 1) Start a new tracker on motion
-        if motion_boxes and not self.tracking_state.active:
-            bbox = max(motion_boxes, key=lambda b: b[2] * b[3])
-            x, y, w, h = bbox
-            fh, fw = frame.shape[:2]
-            area_ratio = (w * h) / (fw * fh)
-            if area_ratio > TRACKER_INIT_MAX_AREA_RATIO:
-                logger.debug("Rejecting tracker init: motion bbox too large (ratio=%.3f)", area_ratio)
-                return None
+    def _update_tracks(self, frame, motion_boxes, debug: Dict) -> List[DetectionEvent]:
+        """Greedy-associate motion boxes to tracks; spawn/coast/kill; finalize events."""
+        fh, fw = frame.shape[:2]
+        max_distance = fw * MATCH_MAX_DISTANCE_RATIO
 
+        track_boxes = [t.bbox for t in self.tracks]
+        matches, unmatched_tracks, unmatched_dets = match(
+            track_boxes,
+            motion_boxes,
+            iou_threshold=MATCH_IOU_THRESHOLD,
+            max_distance=max_distance,
+        )
 
-            self.tracker = self._create_tracker()
-            self.tracker.init(frame, bbox)
-            self.tracking_state.start(self.tracker, bbox, frame.shape[:2])
-            return None
+        for ti, di in matches:
+            self.tracks[ti].matched(motion_boxes[di])
 
-        # 2) No active tracker
-        if not self.tracking_state.active:
-            return None
-        
-        # 3) Update tracker
-        ok, bbox = self.tracking_state.tracker.update(frame)
-        if not ok:
-            # Tracker lost -> finalize event if confirmed, then reset
-            return self._maybe_finalize_on_loss()
-        
-        plausible = self.bbox_is_plausible(bbox, frame.shape[:2])
-        debug["bbox_plausible"] = plausible
+        for ti in unmatched_tracks:
+            self.tracks[ti].missed()
 
-        if not plausible:
-            self.tracking_state.invalid_frames += 1
-            if self.tracking_state.invalid_frames > TRACKER_MAX_INVALID_FRAMES:
-                    return self._maybe_finalize_on_loss(min_post_confirm=True)
-            return None
+        # Unmatched boxes -> new tracks (with size sanity gating).
+        for di in unmatched_dets:
+            box = motion_boxes[di]
+            if not self._spawn_allowed(box, (fh, fw)):
+                continue
+            self.tracks.append(Track(id=self._next_id, bbox=box, frame_shape=(fh, fw)))
+            logger.debug("Spawned track %d at %s", self._next_id, box)
+            self._next_id += 1
 
-        # Geometry OK
-        self.tracking_state.invalid_frames = 0
-        self.tracking_state.update(bbox)
+        # Kill coasted-out tracks; finalize the confirmed ones into events.
+        events: List[DetectionEvent] = []
+        survivors: List[Track] = []
+        for t in self.tracks:
+            if t.misses > MAX_COAST_FRAMES:
+                if t.confirmed:
+                    events.append(self._finalize_track(t))
+                    logger.debug("Track %d ended (confirmed %s) -> event", t.id, t.confirmed_label)
+            else:
+                survivors.append(t)
+        self.tracks = survivors
 
-        if not self.tracking_state.confirmed:
-            self.tracking_state.last_good_frame = frame.copy()
-            self.tracking_state.last_good_frame_shape = frame.shape
-        else:
-            self.tracking_state.frames_since_confirmed += 1
-
-        debug["tracking"] = True
-        debug["frames_tracked"] = self.tracking_state.frames_tracked
-        debug["tracking_bbox"] = tuple(map(int, bbox))
-        debug["confirmed"] = self.tracking_state.confirmed
-
-        if self.tracking_state.confirmed:
-            debug["confirmed_label"] = self.tracking_state.confirmed_label
-            debug["confirmed_conf"] = self.tracking_state.confirmed_confidence
-
-        return None
+        debug["tracking"] = bool(self.tracks)
+        debug["tracks"] = [
+            {
+                "id": t.id,
+                "bbox": tuple(map(int, t.bbox)),
+                "confirmed": t.confirmed,
+                "label": t.confirmed_label,
+                "conf": t.confirmed_confidence,
+                "coasting": t.misses > 0,
+            }
+            for t in self.tracks
+        ]
+        return events
 
     def _maybe_run_yolo(self, frame, debug: Dict) -> None:
+        """Run a single YOLO inference and confirm any stable tracks it covers."""
+        # Tracks that exhausted their attempts without a hit: stop retrying.
+        for t in self.tracks:
+            if not t.detection_done and not t.confirmed and t.yolo_attempts >= MAX_YOLO_ATTEMPTS:
+                t.detection_done = True
+                logger.debug("Track %d gave up YOLO confirmation", t.id)
 
-        if self.tracking_state.detection_done:
-            return
-
-        if  self.tracking_state.frames_tracked < TRACKING_STABLE_FRAMES:
-            return
-
-        # Space retries out so each YOLO call sees a meaningfully different view
-        # (hornet shifts, micro-motion, exposure adjustments) rather than running
-        # back-to-back on essentially identical frames.
-        if self.tracking_state.yolo_attempts > 0:
-            frames_since_last = (
-                self.tracking_state.frames_tracked
-                - self.tracking_state.last_yolo_at_frames_tracked
-            )
-            if frames_since_last < YOLO_RETRY_INTERVAL_FRAMES:
-                return
-
-        if self.tracking_state.yolo_attempts >= MAX_YOLO_ATTEMPTS:
-            self.tracking_state.reset()
+        candidates = [
+            t
+            for t in self.tracks
+            if t.needs_yolo(TRACKING_STABLE_FRAMES, YOLO_RETRY_INTERVAL_FRAMES, MAX_YOLO_ATTEMPTS)
+        ]
+        if not candidates:
             return
 
         detections = run_detection(frame, self.model)
-
-        logger.debug("YOLO attempt %d/%d on track @ frame %d: %d detection(s)",
-                     self.tracking_state.yolo_attempts + 1,
-                     MAX_YOLO_ATTEMPTS,
-                     self.tracking_state.frames_tracked,
-                     len(detections))
         debug["yolo_ran"] = True
-        self.tracking_state.yolo_attempts += 1
-        self.tracking_state.last_yolo_at_frames_tracked = self.tracking_state.frames_tracked
+        for t in candidates:
+            t.yolo_attempts += 1
+            t.last_yolo_at_frames_tracked = t.frames_tracked
 
+        logger.debug("YOLO ran for %d candidate track(s): %d detection(s)", len(candidates), len(detections))
         if not detections:
             return
-        
-        # Pick the highest-confidence detection
-        best_det = max(detections, key=lambda d: float(d.get("confidence", 0.0)))   
-        label = "AH" if best_det.get("class_id") == 1 else "EH"
-        conf = float(best_det.get("confidence", 0.0))
 
-        # Re-initialize tracker on the YOLO bbox
-        x1, y1, x2, y2 = best_det["bbox"]
-        w, h = x2 - x1, y2 - y1
+        # Assign each candidate track the detection that best overlaps its box,
+        # so a track is confirmed by the insect it is actually following -- not
+        # by whichever insect in the frame happens to score highest.
+        for t in candidates:
+            best_det = None
+            best_iou = 0.0
+            for det in detections:
+                x1, y1, x2, y2 = det["bbox"]
+                det_box = (x1, y1, x2 - x1, y2 - y1)
+                ov = iou(t.bbox, det_box)
+                if ov > best_iou:
+                    best_iou = ov
+                    best_det = det
 
-        self.tracking_state.tracker = self._create_tracker()
-        self.tracking_state.tracker.init(frame, (x1, y1, w, h))
-        self.tracking_state.bbox = (x1, y1, w, h)
+            if best_det is None or best_iou < YOLO_MATCH_IOU:
+                continue
 
-        self.tracking_state.confirmed = True
-        self.tracking_state.detection_done = True
-        self.tracking_state.detections = detections
+            label = "AH" if best_det.get("class_id") == 1 else "EH"
+            t.confirmed = True
+            t.detection_done = True
+            t.confirmed_label = label
+            t.confirmed_confidence = float(best_det.get("confidence", 0.0))
+            t.confirmed_frame = frame
+            t.confirmed_frame_shape = frame.shape
+            t.confirmed_yolo_bbox = best_det["bbox"]
+            t.detections = [best_det]
+            logger.debug("Track %d confirmed as %s (%.2f, IoU=%.2f)", t.id, label, t.confirmed_confidence, best_iou)
 
-        self.tracking_state.confirmed_label = label
-        self.tracking_state.confirmed_confidence = conf
-        self.tracking_state.confirmed_frame = frame
-        self.tracking_state.confirmed_frame_shape = frame.shape
-        self.tracking_state.confirmed_yolo_bbox = best_det["bbox"] 
-
-    def _maybe_finalize_on_loss(self, *, min_post_confirm: bool = False) -> Optional[DetectionEvent]:
-        """Finalize an event when tracking is lost, if confirmed."""
-        if self.tracking_state.confirmed:
-            if min_post_confirm and self.tracking_state.frames_since_confirmed < MIN_POST_CONFIRM_FRAMES:
-                return None
-            event = self._finalize_event()
-            self.tracking_state.reset()
-            return event
-
-        self.tracking_state.reset()
-        return None
-    
-    def _finalize_event(self) -> DetectionEvent:
-        """Create a <DetectionEvent> from current tracking state."""
-        
-        centers = self.tracking_state.centers
-        approach_vec = vector_from_points(centers, mode="approach")
-        departure_vec = vector_from_points(centers, mode="departure")
+    def _finalize_track(self, t: Track) -> DetectionEvent:
+        """Create a <DetectionEvent> from a finished, confirmed track."""
+        approach_vec = vector_from_points(t.centers, mode="approach")
+        departure_vec = vector_from_points(t.centers, mode="departure")
 
         return DetectionEvent(
             pi_id=PI_ID,
-            detections=self.tracking_state.detections,
+            detections=t.detections,
             model_name=MODEL_NAME,
             source=self.source_name,
-            frame=self.tracking_state.confirmed_frame,
-            tracking_bbox=self.tracking_state.confirmed_yolo_bbox,
-            tracking_frames=len(centers),
-            frame_shape=(self.tracking_state.confirmed_frame_shape[:2] if self.tracking_state.confirmed_frame_shape is not None else None),
+            frame=t.confirmed_frame,
+            tracking_bbox=t.confirmed_yolo_bbox,
+            tracking_frames=len(t.centers),
+            frame_shape=(t.confirmed_frame_shape[:2] if t.confirmed_frame_shape is not None else None),
             approach_vec=approach_vec,
             departure_vec=departure_vec,
-            dwell_time=self.tracking_state.dwell_time,
+            dwell_time=t.dwell_time,
         )
 
-    def _create_tracker(self):
-        """Create an OpenCV tracker instance based on configuration."""
-        t = TRACKER_TYPE.upper()
-
-        if t == "KCF" and hasattr(cv2, "TrackerKCF_create"):
-            return cv2.TrackerKCF_create()
-
-        if t == "CSRT" and hasattr(cv2, "TrackerCSRT_create"):
-            return cv2.TrackerCSRT_create()
-
-        if t == "MOSSE" and hasattr(cv2, "TrackerMOSSE_create"):
-            return cv2.TrackerMOSSE_create()
-
-        if t == "AUTO":
-            if hasattr(cv2, "TrackerCSRT_create"):
-                return cv2.TrackerCSRT_create()
-            if hasattr(cv2, "TrackerKCF_create"):
-                return cv2.TrackerKCF_create()
-
-        raise RuntimeError("No suitable OpenCV tracker available")
-    
-    def bbox_is_plausible(self, bbox, frame_shape) -> bool:
-        x, y, w, h = bbox
+    def _spawn_allowed(self, box, frame_shape) -> bool:
+        """Size sanity gate before creating a new track from a motion box."""
+        x, y, w, h = box
         fh, fw = frame_shape
-
         area_ratio = (w * h) / (fw * fh)
-        aspect = w / h if h > 0 else 0
-
-
-        # Always apply size bounds
-        if area_ratio > TRACKER_MAX_AREA_RATIO:
+        if area_ratio > TRACKER_INIT_MAX_AREA_RATIO:
             return False
         if area_ratio < TRACKER_MIN_AREA_RATIO:
             return False
-
-        # After confirmation also apply aspect ratio and edge checks
-        if self.tracking_state.confirmed:
-            if aspect > TRACKER_MAX_ASPECT_RATIO or aspect < TRACKER_MIN_ASPECT_RATIO:
-                return False
-
-            # Edge hugging check (after a few frames)
-            margin_x = fw * TRACKER_EDGE_MARGIN_RATIO
-            margin_y = fh * TRACKER_EDGE_MARGIN_RATIO
-
-
-            if self.tracking_state.frames_tracked > 3:
-                if(
-                    x <= margin_x or
-                    y <= margin_y or
-                    x + w >= fw - margin_x or
-                    y + h >= fh - margin_y
-                ):
-                    return False
-
         return True
