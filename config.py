@@ -73,7 +73,7 @@ TRACKING_STABLE_FRAMES = 8                                      # Number of fram
 # OpenCV appearance tracker is used, so motion detection can run every frame.
 MOTION_DOWNSCALE = 0.5                                          # Downscale factor for MOG2 only (0.5 = quarter the pixels => much faster on a Pi 5). Boxes are scaled back to full res. Use 1.0 to disable.
 MATCH_IOU_THRESHOLD = 0.2                                       # Min IoU to associate a motion box with an existing track (overlap match)
-MATCH_MAX_DISTANCE_RATIO = 0.05                                 # Proximity fallback: max center distance as a fraction of frame width (~100 px at 2048) for fast movers whose boxes don't overlap
+MATCH_MAX_DISTANCE_RATIO = 0.12                                 # Proximity fallback: max center distance as a fraction of frame width (~245 px at 2048). Fast movers (e.g. flies) shift 120-280 px/frame at low FPS; too small => tracks fragment into new IDs. Raise toward 0.15 if fast movers still fragment, lower if nearby objects swap IDs.
 MAX_COAST_FRAMES = 8                                            # Keep a track alive this many frames without a matched box (handles brief occlusion / insect sitting still at the bait). Also enables re-association on reappearance.
 YOLO_MATCH_IOU = 0.3                                            # Min IoU between a YOLO detection and a track's box to confirm that specific track
 
@@ -92,7 +92,7 @@ MIN_POST_CONFIRM_FRAMES = 6                                     # e.g 6–10
 # -- Motion Settings ---
 MOTION_HISTORY = 300                                            # Amount of frames used for Backgroundmodel (low = faster, high = slower)
 MOTION_VAR_THRESHOLD = 40                                       # Sensibility of motion detection (higher = less sensitive to slow/small movers)
-MOTION_MIN_AREA = 3000                                          # Min pixel area for being relevant (~0.1% of 2048x1536, filters ants)
+MOTION_MIN_AREA = 6000                                          # Min pixel area for a relevant motion box. Kept >= the track spawn min-area (TRACKER_MIN_AREA_RATIO ~6300 px), so ant-sized blobs (~3000 px) never become motion boxes and cannot steal matches from real tracks.
 MOTION_KERNEL_SIZE = 5                                          # Size of morphological filtering (larger = erodes small blobs like ants before area check)
 
 

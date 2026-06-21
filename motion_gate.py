@@ -201,10 +201,11 @@ class MotionGate:
         for ti, di in matches:
             self.tracks[ti].matched(motion_boxes[di])
 
+        taken = {di for _, di in matches}
         for ti in unmatched_tracks:
             t = self.tracks[ti]
             t.missed()
-            self._log_miss(t, motion_boxes, max_distance)
+            self._log_miss(t, motion_boxes, max_distance, taken)
 
         # Unmatched boxes -> new tracks (with size sanity gating).
         spawned = 0
@@ -335,20 +336,36 @@ class MotionGate:
             dwell_time=t.dwell_time,
         )
 
-    def _log_miss(self, track: Track, motion_boxes, max_distance) -> None:
-        """Explain why a track found no match this frame (gate diagnostics)."""
+    def _log_miss(self, track: Track, motion_boxes, max_distance, taken) -> None:
+        """Explain why a track found no match this frame (gate diagnostics).
+
+        Distinguishes the three real causes: no motion at all, every box out of
+        the matching gate, or a matchable box that another track claimed first
+        (greedy contention).
+        """
         if not logger.isEnabledFor(logging.DEBUG):
             return
         if not motion_boxes:
             logger.debug("Track %d miss #%d: no motion boxes this frame", track.id, track.misses)
             return
-        dists = [center_distance(track.bbox, b) for b in motion_boxes]
-        best = min(range(len(motion_boxes)), key=lambda k: dists[k])
+
+        stats = [
+            (center_distance(track.bbox, b), iou(track.bbox, b), i)
+            for i, b in enumerate(motion_boxes)
+        ]
+        dist, ov, _ = min(stats, key=lambda s: s[0])  # nearest box
+        in_gate = [s for s in stats if s[0] <= max_distance or s[1] >= MATCH_IOU_THRESHOLD]
+
+        if not in_gate:
+            reason = "out of range"
+        elif all(s[2] in taken for s in in_gate):
+            reason = "matchable box taken by another track"
+        else:
+            reason = "lost greedy contention"
+
         logger.debug(
-            "Track %d miss #%d: nearest box dist=%.0f (gate=%.0f), best IoU=%.2f -> %s",
-            track.id, track.misses, dists[best], max_distance,
-            max(iou(track.bbox, b) for b in motion_boxes),
-            "out of range" if dists[best] > max_distance else "below IoU gate",
+            "Track %d miss #%d: nearest dist=%.0f (gate=%.0f) IoU=%.2f -> %s",
+            track.id, track.misses, dist, max_distance, ov, reason,
         )
 
     def _track_tag(self, t: Track) -> str:
