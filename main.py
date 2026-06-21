@@ -195,6 +195,11 @@ def main():
         level=getattr(logging, args.log_level.upper(), logging.INFO),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+
+    # Third-party libraries are very chatty at DEBUG and drown out our own
+    # tracking logs; keep them at WARNING regardless of our log level.
+    for noisy in ("picamera2", "libcamera", "PIL"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
     
     ensure_directories(IMAGES_DIR, VIDEOS_DIR, EVENTS_DIR)
     cleanup_events()

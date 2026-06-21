@@ -23,7 +23,7 @@ from config import (
 )
 from detection import load_model, run_detection
 from track import Track
-from matching import match, iou
+from matching import match, iou, center_distance
 from event import DetectionEvent
 from sources import FrameSource
 from motion_vectors import vector_from_points
@@ -202,28 +202,51 @@ class MotionGate:
             self.tracks[ti].matched(motion_boxes[di])
 
         for ti in unmatched_tracks:
-            self.tracks[ti].missed()
+            t = self.tracks[ti]
+            t.missed()
+            self._log_miss(t, motion_boxes, max_distance)
 
         # Unmatched boxes -> new tracks (with size sanity gating).
+        spawned = 0
         for di in unmatched_dets:
             box = motion_boxes[di]
             if not self._spawn_allowed(box, (fh, fw)):
+                logger.debug("Box %s rejected for spawn (size gate)", box)
                 continue
             self.tracks.append(Track(id=self._next_id, bbox=box, frame_shape=(fh, fw)))
-            logger.debug("Spawned track %d at %s", self._next_id, box)
+            logger.debug("Track %d SPAWNED at %s", self._next_id, box)
             self._next_id += 1
+            spawned += 1
 
         # Kill coasted-out tracks; finalize the confirmed ones into events.
         events: List[DetectionEvent] = []
         survivors: List[Track] = []
+        killed = 0
         for t in self.tracks:
             if t.misses > MAX_COAST_FRAMES:
+                killed += 1
                 if t.confirmed:
                     events.append(self._finalize_track(t))
-                    logger.debug("Track %d ended (confirmed %s) -> event", t.id, t.confirmed_label)
+                    logger.debug(
+                        "Track %d ENDED confirmed=%s after %d frames -> event",
+                        t.id, t.confirmed_label, t.frames_tracked,
+                    )
+                else:
+                    logger.debug(
+                        "Track %d DROPPED (unconfirmed) after %d frames, coasted out (%d misses)",
+                        t.id, t.frames_tracked, t.misses,
+                    )
             else:
                 survivors.append(t)
         self.tracks = survivors
+
+        # Compact per-frame summary (only when something is going on).
+        if motion_boxes or self.tracks or killed:
+            logger.debug(
+                "frame %d | motion=%d matched=%d spawned=%d killed=%d | active=[%s]",
+                self.frame_count, len(motion_boxes), len(matches), spawned, killed,
+                ", ".join(self._track_tag(t) for t in self.tracks),
+            )
 
         debug["tracking"] = bool(self.tracks)
         debug["tracks"] = [
@@ -311,6 +334,30 @@ class MotionGate:
             departure_vec=departure_vec,
             dwell_time=t.dwell_time,
         )
+
+    def _log_miss(self, track: Track, motion_boxes, max_distance) -> None:
+        """Explain why a track found no match this frame (gate diagnostics)."""
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+        if not motion_boxes:
+            logger.debug("Track %d miss #%d: no motion boxes this frame", track.id, track.misses)
+            return
+        dists = [center_distance(track.bbox, b) for b in motion_boxes]
+        best = min(range(len(motion_boxes)), key=lambda k: dists[k])
+        logger.debug(
+            "Track %d miss #%d: nearest box dist=%.0f (gate=%.0f), best IoU=%.2f -> %s",
+            track.id, track.misses, dists[best], max_distance,
+            max(iou(track.bbox, b) for b in motion_boxes),
+            "out of range" if dists[best] > max_distance else "below IoU gate",
+        )
+
+    def _track_tag(self, t: Track) -> str:
+        """Short label for a track in the per-frame summary, e.g. '12:AH' or '13?coast'."""
+        if t.confirmed:
+            state = t.confirmed_label
+        else:
+            state = "coast" if t.misses > 0 else "new"
+        return f"{t.id}:{state}"
 
     def _spawn_allowed(self, box, frame_shape) -> bool:
         """Size sanity gate before creating a new track from a motion box."""
