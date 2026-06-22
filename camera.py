@@ -3,6 +3,7 @@
 import logging
 import cv2
 from config import (
+    ANALOGUE_GAIN,
     AWB_ENABLE,
     AWB_MODE,
     CAMERA_FPS,
@@ -10,6 +11,7 @@ from config import (
     CAMERA_TYPE,
     CAMERA_WIDTH,
     COLOUR_GAINS,
+    EXPOSURE_TIME_US,
     FOCUS_DISTANCE_CM,
     PICAM_FORMAT,
     WEBCAM_INDEX,
@@ -69,12 +71,35 @@ class Camera:
             crop_h,
         )
 
+        # Pin the frame duration to the requested FPS. Without this, auto-
+        # exposure may pick an exposure longer than 1/FPS and silently drop the
+        # capture rate (e.g. to ~2 FPS in dim light), which makes fast insects
+        # jump too far between frames to be tracked.
+        frame_us = int(1_000_000 / CAMERA_FPS) if CAMERA_FPS else 100_000
+
         controls_dict = {
-            "FrameRate": CAMERA_FPS,
+            "FrameDurationLimits": (frame_us, frame_us),
             "ScalerCrop": scaler_crop,
-            "AeEnable": True,
             "AwbEnable": AWB_ENABLE,
         }
+
+        # Exposure: manual (short = motion-frozen) if configured, else auto-
+        # exposure bounded by the frame budget above.
+        if EXPOSURE_TIME_US is not None:
+            controls_dict["AeEnable"] = False
+            controls_dict["ExposureTime"] = EXPOSURE_TIME_US
+            if ANALOGUE_GAIN is not None:
+                controls_dict["AnalogueGain"] = ANALOGUE_GAIN
+            logger.info(
+                "Camera %s: manual exposure %d us, gain=%s, %.1f FPS",
+                model, EXPOSURE_TIME_US, ANALOGUE_GAIN, CAMERA_FPS,
+            )
+        else:
+            controls_dict["AeEnable"] = True
+            logger.info(
+                "Camera %s: auto exposure, frame duration pinned to %d us (%.1f FPS)",
+                model, frame_us, CAMERA_FPS,
+            )
 
         if "NoiseReductionMode" in available_controls:
             controls_dict["NoiseReductionMode"] = 1  # Fast

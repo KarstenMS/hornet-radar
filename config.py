@@ -35,6 +35,17 @@ WEBCAM_INDEX = 0
 PICAM_FORMAT = "RGB888"                                         # Picamera2 naming is reversed vs numpy: "RGB888" actually yields BGR arrays, matching cv2.VideoCapture.
 FOCUS_DISTANCE_CM = 20                                          # Camera Module 3: focus distance in cm to the target (e.g. hive entrance). Set per-Pi. Ignored on IMX500 (fixed focus).
 
+# --- Exposure ---
+# The frame duration is pinned to CAMERA_FPS (FrameDurationLimits), so the
+# capture rate can no longer collapse when auto-exposure picks a long exposure.
+# This is critical for tracking: at a low frame rate fast insects jump hundreds
+# of pixels between frames and cannot be associated across frames.
+# In bright daylight, set a short EXPOSURE_TIME_US to freeze motion (sharp,
+# blur-free insects). Leave it None to let auto-exposure adapt (safer for
+# changing light, but exposure may lengthen and reintroduce motion blur).
+EXPOSURE_TIME_US = None                                         # e.g. 6000 (=6 ms) in daylight to freeze fast movers; None = auto-exposure (bounded by the frame budget)
+ANALOGUE_GAIN = None                                            # Sensor gain to pair with manual EXPOSURE_TIME_US (e.g. 1.0-2.0 in daylight). None = auto. Only used when EXPOSURE_TIME_US is set.
+
 # --- White balance ---
 # Auto AWB drifts under a saturated background (e.g. greenscreen bait surface) and
 # differs per camera unit, so manual ColourGains is the more reliable default.
