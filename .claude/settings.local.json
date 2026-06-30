@@ -3,7 +3,9 @@
     "allow": [
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:hornet-radar.com)"
+      "WebFetch(domain:hornet-radar.com)",
+      "WebFetch(domain:www.nature.com)",
+      "WebSearch"
     ]
   }
 }
