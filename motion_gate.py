@@ -6,7 +6,10 @@ from config import (
     FRAME_SKIP,
     MATCH_IOU_THRESHOLD,
     MATCH_MAX_DISTANCE_RATIO,
+    STATIONARY_EDGE_MARGIN_RATIO,
+    STATIONARY_SPEED_PX,
     MAX_COAST_FRAMES,
+    MAX_COAST_FRAMES_STATIONARY,
     MAX_YOLO_ATTEMPTS,
     MODEL_NAME,
     MOTION_DOWNSCALE,
@@ -224,7 +227,15 @@ class MotionGate:
         survivors: List[Track] = []
         killed = 0
         for t in self.tracks:
-            if t.misses > MAX_COAST_FRAMES:
+            # A track that went quiet while sitting at the central bait keeps a
+            # much larger coast budget than one that flew off, so a feeding
+            # insect keeps its ID across the whole bout instead of being dropped.
+            if t.is_stationary_at_bait(STATIONARY_SPEED_PX, STATIONARY_EDGE_MARGIN_RATIO):
+                coast_budget = MAX_COAST_FRAMES_STATIONARY
+            else:
+                coast_budget = MAX_COAST_FRAMES
+
+            if t.misses > coast_budget:
                 killed += 1
                 if t.confirmed:
                     events.append(self._finalize_track(t))

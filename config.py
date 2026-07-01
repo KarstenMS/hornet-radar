@@ -9,6 +9,7 @@ LATITUDE = 00.0                                    # Get the values from Google 
 LONGITUDE = 00.0
 
 SHOW_DEBUG_VIDEO = True                                         # Shows Debug Video on the PI (requires GUI), default False
+DEBUG_DISPLAY_WIDTH = 960                                        # Downscale the debug window to this width before imshow. Huge bandwidth cut over Pi Connect / remote desktop (the full desktop incl. this window is re-encoded and streamed). Set 0 to show full resolution.
 
 # --- Directories ---
 ROOT = "/home/hornet/hornet-radar"
@@ -26,14 +27,14 @@ CAMERA_TYPE = "picamera2"                                       # "picamera2" | 
 
 CAMERA_WIDTH = 2048 #1024 2048
 CAMERA_HEIGHT = 1536 #768 1536
-CAMERA_FPS = 10
+CAMERA_FPS = 15
 
 # Webcam only
 WEBCAM_INDEX = 0
 
 # Picamera2 only
 PICAM_FORMAT = "RGB888"                                         # Picamera2 naming is reversed vs numpy: "RGB888" actually yields BGR arrays, matching cv2.VideoCapture.
-FOCUS_DISTANCE_CM = 20                                          # Camera Module 3: focus distance in cm to the target (e.g. hive entrance). Set per-Pi. Ignored on IMX500 (fixed focus).
+FOCUS_DISTANCE_CM = 15                                          # Camera Module 3: focus distance in cm to the target (e.g. hive entrance). Set per-Pi. Ignored on IMX500 (fixed focus).
 
 # --- Exposure ---
 # The frame duration is pinned to CAMERA_FPS (FrameDurationLimits), so the
@@ -54,7 +55,7 @@ AWB_MODE = 5                                                    # libcamera pres
 COLOUR_GAINS = (1.6, 2.0)                                       # (red_gain, blue_gain). Increase blue to cool the image (less yellow). Tune per-Pi.
 
 # --- Detection Settings ---
-CONFIDENCE_THRESHOLD = 0.95                                     # Optional: confidence threshold for detections
+CONFIDENCE_THRESHOLD = 0.93                                     # Optional: confidence threshold for detections
 MAX_YOLO_ATTEMPTS = 8                                           # Max YOLO inferences per track before giving up on confirmation.
 YOLO_RETRY_INTERVAL_FRAMES = 5                                  # Frames to wait between consecutive YOLO attempts (so each retry sees a meaningfully different view).
 
@@ -85,7 +86,18 @@ TRACKING_STABLE_FRAMES = 8                                      # Number of fram
 MOTION_DOWNSCALE = 0.5                                          # Downscale factor for MOG2 only (0.5 = quarter the pixels => much faster on a Pi 5). Boxes are scaled back to full res. Use 1.0 to disable.
 MATCH_IOU_THRESHOLD = 0.2                                       # Min IoU to associate a motion box with an existing track (overlap match)
 MATCH_MAX_DISTANCE_RATIO = 0.12                                 # Proximity fallback: max center distance as a fraction of frame width (~245 px at 2048). Fast movers (e.g. flies) shift 120-280 px/frame at low FPS; too small => tracks fragment into new IDs. Raise toward 0.15 if fast movers still fragment, lower if nearby objects swap IDs.
-MAX_COAST_FRAMES = 8                                            # Keep a track alive this many frames without a matched box (handles brief occlusion / insect sitting still at the bait). Also enables re-association on reappearance.
+MAX_COAST_FRAMES = 8                                            # Keep a track alive this many frames without a matched box (handles brief occlusion / insect flying past). Also enables re-association on reappearance.
+
+# An insect sitting still at the bait produces no motion, so MOG2 stops emitting
+# a box and the track would normally be killed after MAX_COAST_FRAMES. When a
+# track went quiet while it was (a) barely moving and (b) not near a frame edge
+# -- i.e. it likely landed at the centrally-placed bait rather than flying out
+# of frame -- it gets a much larger coast budget instead, so the same insect
+# keeps its ID across the whole feeding bout and resumes cleanly.
+MAX_COAST_FRAMES_STATIONARY = 120                              # Coast budget for a track judged to be sitting at the bait (~12 s at 10 FPS). Raise for longer feeding bouts; too high risks a stale track absorbing a different insect that lands on the same spot.
+STATIONARY_SPEED_PX = 8.0                                      # Avg center displacement (px/frame) below which a track counts as "sitting" rather than "flew off".
+STATIONARY_EDGE_MARGIN_RATIO = 0.06                            # A track whose last center is within this fraction of any frame edge is treated as "left the frame" (short coast), never as sitting.
+
 YOLO_MATCH_IOU = 0.3                                            # Min IoU between a YOLO detection and a track's box to confirm that specific track
 
 # --- Tracker Geometry Abort Thresholds (Abort Criterion) ---

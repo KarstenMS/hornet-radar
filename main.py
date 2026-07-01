@@ -9,6 +9,7 @@ from cleanup import cleanup_events
 from config import (
     CAMERA_FPS,
     CONFIDENCE_THRESHOLD,
+    DEBUG_DISPLAY_WIDTH,
     EVENTS_DIR,
     IMAGES_DIR,
     SHOW_DEBUG_VIDEO,
@@ -111,11 +112,20 @@ def process_camera(motion_gate: MotionGate) -> None:
 
             # --- Optional debug window ---
             if SHOW_DEBUG_VIDEO:
-                display = frame.copy()
-                draw_debug_overlay(display, debug)
+                # Downscale BEFORE drawing so the (resolution-independent) status
+                # text stays full-size while box coordinates are scaled to match.
+                # A smaller window is far cheaper to stream over Pi Connect.
+                if DEBUG_DISPLAY_WIDTH and frame.shape[1] > DEBUG_DISPLAY_WIDTH:
+                    scale = DEBUG_DISPLAY_WIDTH / frame.shape[1]
+                    display = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+                else:
+                    display = frame.copy()
+                    scale = 1.0
+
+                draw_debug_overlay(display, debug, scale)
                 cv2.imshow("Hornet Debug", display)
 
-                if cv2.waitKey(1) & 0xFF == 27: 
+                if cv2.waitKey(1) & 0xFF == 27:
                     break
 
     finally:
@@ -123,8 +133,13 @@ def process_camera(motion_gate: MotionGate) -> None:
         cv2.destroyAllWindows()
 
 
-def draw_debug_overlay(frame, debug: dict) -> None:
-    """Draw a textual overlay containing debug information."""
+def draw_debug_overlay(frame, debug: dict, scale: float = 1.0) -> None:
+    """Draw a textual overlay containing debug information.
+
+    `scale` maps full-resolution box coordinates (from the pipeline) onto a
+    possibly-downscaled display frame; status text is drawn at fixed positions
+    and is unaffected.
+    """
     y = 20
     step = 22
 
@@ -158,11 +173,12 @@ def draw_debug_overlay(frame, debug: dict) -> None:
 
     # Raw motion boxes (thin red) for debugging the detector.
     for (x, yb, w, h) in debug.get("motion_boxes", []) or []:
+        x, yb, w, h = int(x * scale), int(yb * scale), int(w * scale), int(h * scale)
         cv2.rectangle(frame, (x, yb), (x + w, yb + h), (0, 0, 255), 1)
 
     # One box per active track, colored by state.
     for t in tracks:
-        x, y, w, h = map(int, t["bbox"])
+        x, y, w, h = (int(v * scale) for v in t["bbox"])
 
         if t.get("confirmed"):
             label = t.get("label", "?")

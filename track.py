@@ -6,6 +6,7 @@ Identity is maintained purely by associating motion boxes to existing tracks
 (see <matching>); no OpenCV appearance tracker is involved, which keeps the
 pipeline cheap enough to run motion detection on every frame on a Pi 5.
 """
+import math
 import time
 from dataclasses import dataclass, field
 from typing import Any, List, Optional, Tuple
@@ -70,6 +71,37 @@ class Track:
     def missed(self) -> None:
         """Register a frame in which no motion box matched this track (coasting)."""
         self.misses += 1
+
+    def recent_speed(self, window: int = 5) -> float:
+        """Average per-frame center displacement over the last `window` steps (px/frame).
+
+        Reflects how fast the track was moving just before it lost its box, which
+        is what tells "landed at the bait" (~0) from "flew off" (large) apart.
+        """
+        pts = self.centers[-(window + 1):]
+        if len(pts) < 2:
+            return 0.0
+        dists = [
+            math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
+            for i in range(len(pts) - 1)
+        ]
+        return sum(dists) / len(dists)
+
+    def is_stationary_at_bait(self, speed_px: float, edge_margin_ratio: float) -> bool:
+        """Whether this track likely sits at the (centrally-placed) bait rather than left.
+
+        True only when it was barely moving AND its last position is well inside
+        the frame; an insect leaving does so toward an edge, so edge-proximity
+        rules out the long stationary coast budget.
+        """
+        if self.frame_shape is None:
+            return False
+        if self.recent_speed() > speed_px:
+            return False
+        fh, fw = self.frame_shape
+        cx, cy = _center(self.bbox)
+        mx, my = fw * edge_margin_ratio, fh * edge_margin_ratio
+        return mx <= cx <= fw - mx and my <= cy <= fh - my
 
     def needs_yolo(self, stable_frames: int, retry_interval: int, max_attempts: int) -> bool:
         """Whether this track should be offered to YOLO for confirmation this frame."""
