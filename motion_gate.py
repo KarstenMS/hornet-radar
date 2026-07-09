@@ -7,7 +7,6 @@ from config import (
     MATCH_IOU_THRESHOLD,
     MATCH_MAX_DISTANCE_RATIO,
     STATIONARY_EDGE_MARGIN_RATIO,
-    STATIONARY_SPEED_PX,
     MAX_COAST_FRAMES,
     MAX_COAST_FRAMES_STATIONARY,
     MAX_YOLO_ATTEMPTS,
@@ -23,6 +22,8 @@ from config import (
     TRACKING_STABLE_FRAMES,
     YOLO_MATCH_IOU,
     YOLO_RETRY_INTERVAL_FRAMES,
+    YOLO_PRESENCE_INTERVAL_FRAMES,
+    YOLO_PRESENCE_LOST_LIMIT,
 )
 from detection import load_model, run_detection
 from track import Track
@@ -227,10 +228,20 @@ class MotionGate:
         survivors: List[Track] = []
         killed = 0
         for t in self.tracks:
-            # A track that went quiet while sitting at the central bait keeps a
-            # much larger coast budget than one that flew off, so a feeding
-            # insect keeps its ID across the whole bout instead of being dropped.
-            if t.is_stationary_at_bait(STATIONARY_SPEED_PX, STATIONARY_EDGE_MARGIN_RATIO):
+            stationary = t.is_stationary_at_bait(STATIONARY_EDGE_MARGIN_RATIO)
+            if stationary:
+                # Freeze the arrival flight the first time it lands, and mark it
+                # sitting so the next matched box is recognised as the exit flight.
+                t.freeze_approach()
+                t.sitting = True
+
+            # A track that YOLO has judged departed dies quickly (short budget) so
+            # its event finalizes right after it leaves. A track still sitting at
+            # the central bait is kept alive long (the presence check refreshes it
+            # every frame it is seen); anything else uses the normal short budget.
+            if t.departed:
+                coast_budget = MAX_COAST_FRAMES
+            elif stationary:
                 coast_budget = MAX_COAST_FRAMES_STATIONARY
             else:
                 coast_budget = MAX_COAST_FRAMES
@@ -269,69 +280,140 @@ class MotionGate:
                 "label": t.confirmed_label,
                 "conf": t.confirmed_confidence,
                 "coasting": t.misses > 0,
+                "sitting": t.sitting,
+                "departed": t.departed,
             }
             for t in self.tracks
         ]
         return events
 
     def _maybe_run_yolo(self, frame, debug: Dict) -> None:
-        """Run a single YOLO inference and confirm any stable tracks it covers."""
-        # Tracks that exhausted their attempts without a hit: stop retrying.
+        """Run at most one YOLO inference per frame for two purposes:
+
+        - confirm still-unconfirmed tracks that are stable or have just landed;
+        - presence-check confirmed tracks sitting at the bait, to keep them alive
+          across the feeding bout and detect when they depart.
+        """
+        fc = self.frame_count
+
+        # Unconfirmed tracks that exhausted their attempts without a hit: give up.
         for t in self.tracks:
             if not t.detection_done and not t.confirmed and t.yolo_attempts >= MAX_YOLO_ATTEMPTS:
                 t.detection_done = True
                 logger.debug("Track %d gave up YOLO confirmation", t.id)
 
-        candidates = [
-            t
-            for t in self.tracks
-            if t.needs_yolo(TRACKING_STABLE_FRAMES, YOLO_RETRY_INTERVAL_FRAMES, MAX_YOLO_ATTEMPTS)
-        ]
-        if not candidates:
+        confirm = [t for t in self.tracks if self._needs_confirmation(t, fc)]
+        presence = [t for t in self.tracks if self._needs_presence_check(t, fc)]
+        if not confirm and not presence:
             return
 
         detections = run_detection(frame, self.model)
         debug["yolo_ran"] = True
-        for t in candidates:
+        for t in confirm + presence:
+            t.last_yolo_frame = fc
+
+        logger.debug(
+            "YOLO ran: %d confirm, %d presence candidate(s), %d detection(s)",
+            len(confirm), len(presence), len(detections),
+        )
+
+        # --- Confirmation: attach the best-overlapping detection to each track,
+        # so it is confirmed by the insect it is actually following, not by
+        # whichever insect in the frame scores highest. ---
+        for t in confirm:
             t.yolo_attempts += 1
-            t.last_yolo_at_frames_tracked = t.frames_tracked
-
-        logger.debug("YOLO ran for %d candidate track(s): %d detection(s)", len(candidates), len(detections))
-        if not detections:
-            return
-
-        # Assign each candidate track the detection that best overlaps its box,
-        # so a track is confirmed by the insect it is actually following -- not
-        # by whichever insect in the frame happens to score highest.
-        for t in candidates:
-            best_det = None
-            best_iou = 0.0
-            for det in detections:
-                x1, y1, x2, y2 = det["bbox"]
-                det_box = (x1, y1, x2 - x1, y2 - y1)
-                ov = iou(t.bbox, det_box)
-                if ov > best_iou:
-                    best_iou = ov
-                    best_det = det
-
+            best_det, best_iou = self._best_overlap(t, detections)
             if best_det is None or best_iou < YOLO_MATCH_IOU:
                 continue
+            self._apply_detection(t, best_det, frame)
+            logger.debug(
+                "Track %d confirmed as %s (%.2f, IoU=%.2f)",
+                t.id, t.confirmed_label, t.confirmed_confidence, best_iou,
+            )
 
-            label = "AH" if best_det.get("class_id") == 1 else "EH"
-            t.confirmed = True
-            t.detection_done = True
-            t.confirmed_label = label
-            t.confirmed_confidence = float(best_det.get("confidence", 0.0))
-            t.confirmed_frame = frame
-            t.confirmed_frame_shape = frame.shape
-            t.confirmed_yolo_bbox = best_det["bbox"]
-            t.detections = [best_det]
-            logger.debug("Track %d confirmed as %s (%.2f, IoU=%.2f)", t.id, label, t.confirmed_confidence, best_iou)
+        # --- Presence: is the confirmed insect still at its box? If yes, keep the
+        # track alive and refresh its (sharp) proof image; if it is gone for
+        # YOLO_PRESENCE_LOST_LIMIT checks in a row, mark it departed. ---
+        for t in presence:
+            best_det, best_iou = self._best_overlap(t, detections)
+            if best_det is not None and best_iou >= YOLO_MATCH_IOU:
+                t.mark_present()
+                t.presence_failures = 0
+                self._apply_detection(t, best_det, frame)  # refresh sharp proof frame
+                logger.debug("Track %d still present (IoU=%.2f)", t.id, best_iou)
+            else:
+                t.presence_failures += 1
+                logger.debug(
+                    "Track %d presence check failed (%d/%d)",
+                    t.id, t.presence_failures, YOLO_PRESENCE_LOST_LIMIT,
+                )
+                if t.presence_failures >= YOLO_PRESENCE_LOST_LIMIT:
+                    t.departed = True
+                    logger.debug("Track %d marked DEPARTED (presence lost)", t.id)
+
+    def _needs_confirmation(self, t: Track, fc: int) -> bool:
+        """Whether an unconfirmed track should be offered to YOLO this frame."""
+        if t.detection_done or t.confirmed:
+            return False
+        if t.yolo_attempts >= MAX_YOLO_ATTEMPTS:
+            return False
+        # Ready once it has tracked enough frames OR has just landed at the bait
+        # (a sharp, motionless insect is the ideal moment to identify it).
+        ready = t.frames_tracked >= TRACKING_STABLE_FRAMES or t.is_stationary_at_bait(
+            STATIONARY_EDGE_MARGIN_RATIO
+        )
+        if not ready:
+            return False
+        if t.yolo_attempts > 0 and (fc - t.last_yolo_frame) < YOLO_RETRY_INTERVAL_FRAMES:
+            return False
+        return True
+
+    def _needs_presence_check(self, t: Track, fc: int) -> bool:
+        """Whether a confirmed, still-sitting track should be presence-checked."""
+        if not t.confirmed or t.departed:
+            return False
+        if not t.is_stationary_at_bait(STATIONARY_EDGE_MARGIN_RATIO):
+            return False
+        return (fc - t.last_yolo_frame) >= YOLO_PRESENCE_INTERVAL_FRAMES
+
+    @staticmethod
+    def _best_overlap(t: Track, detections) -> Tuple:
+        """Return (detection, iou) of the detection best overlapping the track box."""
+        best_det = None
+        best_iou = 0.0
+        for det in detections:
+            x1, y1, x2, y2 = det["bbox"]
+            det_box = (x1, y1, x2 - x1, y2 - y1)
+            ov = iou(t.bbox, det_box)
+            if ov > best_iou:
+                best_iou = ov
+                best_det = det
+        return best_det, best_iou
+
+    @staticmethod
+    def _apply_detection(t: Track, det: Dict, frame) -> None:
+        """Confirm a track from a detection (also used to refresh the proof image)."""
+        t.confirmed = True
+        t.detection_done = True
+        t.confirmed_label = "AH" if det.get("class_id") == 1 else "EH"
+        t.confirmed_confidence = float(det.get("confidence", 0.0))
+        t.confirmed_frame = frame
+        t.confirmed_frame_shape = frame.shape
+        t.confirmed_yolo_bbox = det["bbox"]
+        t.detections = [det]
 
     def _finalize_track(self, t: Track) -> DetectionEvent:
-        """Create a <DetectionEvent> from a finished, confirmed track."""
-        approach_vec = vector_from_points(t.centers, mode="approach")
-        departure_vec = vector_from_points(t.centers, mode="departure")
+        """Create a <DetectionEvent> from a finished, confirmed track.
+
+        Approach uses the arrival flight (snapshotted when the insect first sat,
+        so a feeding sit does not let the exit flight bleed into it); departure
+        uses only the exit segment after that sit. For a pure fly-by (never sat)
+        both fall back to the single continuous trajectory.
+        """
+        approach_points = t.approach_centers if t.approach_centers is not None else t.centers
+        departure_points = t.centers[t.departure_start:] if t.departure_start is not None else t.centers
+        approach_vec = vector_from_points(approach_points, mode="approach")
+        departure_vec = vector_from_points(departure_points, mode="departure")
 
         return DetectionEvent(
             pi_id=PI_ID,

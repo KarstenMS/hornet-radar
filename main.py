@@ -171,31 +171,41 @@ def draw_debug_overlay(frame, debug: dict, scale: float = 1.0) -> None:
     line(f"Tracks: {len(tracks)}")
     line(f"YOLO run: {'YES' if debug.get('yolo_ran') else 'NO'}")
 
-    # Raw motion boxes (thin red) for debugging the detector.
+    # Raw motion boxes (thin grey) -- de-emphasised so a YOLO-confirmed box pops.
     for (x, yb, w, h) in debug.get("motion_boxes", []) or []:
         x, yb, w, h = int(x * scale), int(yb * scale), int(w * scale), int(h * scale)
-        cv2.rectangle(frame, (x, yb), (x + w, yb + h), (0, 0, 255), 1)
+        cv2.rectangle(frame, (x, yb), (x + w, yb + h), (140, 140, 140), 1)
 
-    # One box per active track, colored by state.
+    # One box per active track. A YOLO-confirmed track stands out: thick box,
+    # bold label with the confidence %, red for Asian hornet (the alarm species),
+    # green for European hornet. Unconfirmed tracks stay thin/orange.
     for t in tracks:
         x, y, w, h = (int(v * scale) for v in t["bbox"])
 
         if t.get("confirmed"):
             label = t.get("label", "?")
-            conf = t.get("conf") or 0.0
-            color = (0, 0, 255) if label == "AH" else (0, 255, 0)
-            text = f"#{t['id']} {label} {conf:.2f}"
+            conf = (t.get("conf") or 0.0) * 100.0
+            color = (0, 0, 255) if label == "AH" else (0, 200, 0)
+            text = f"#{t['id']} {label} {conf:.1f}%"
+            thickness = 3
+            font_scale = 0.7
         else:
             color = (255, 200, 0)  # tracked, not yet confirmed
             text = f"#{t['id']} TRACK"
+            thickness = 2
+            font_scale = 0.5
 
-        if t.get("coasting"):
+        if t.get("departed"):
+            text += " (left)"
+        elif t.get("sitting"):
+            text += " (feeding)"
+        elif t.get("coasting"):
             text += " (coast)"
 
-        cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-        (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
-        cv2.rectangle(frame, (x, y - th - 6), (x + tw + 4, y), color, -1)
-        cv2.putText(frame, text, (x + 2, y - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+        cv2.rectangle(frame, (x, y), (x + w, y + h), color, thickness)
+        (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 2)
+        cv2.rectangle(frame, (x, y - th - 8), (x + tw + 6, y), color, -1)
+        cv2.putText(frame, text, (x + 3, y - 5), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), 2)
 
 def main():
     """CLI main function."""
