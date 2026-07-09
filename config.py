@@ -67,7 +67,7 @@ YOLO_RETRY_INTERVAL_FRAMES = 5                                  # Frames to wait
 # still finds the insect at the track's box, the track is kept alive and its proof
 # image is refreshed from the (sharp) sitting frame. When YOLO no longer finds it
 # there, the insect has departed and the track is finalized into one event.
-YOLO_PRESENCE_INTERVAL_FRAMES = 15                             # Re-check a sitting confirmed track with YOLO every N frames (~1 s at 15 FPS). Lower = faster departure detection but more inferences.
+YOLO_PRESENCE_INTERVAL_FRAMES = 45                             # Re-check a sitting confirmed track with YOLO every N frames (~3 s at 15 FPS). This is the main FPS knob while an insect feeds: each check is a full YOLO inference that briefly stalls the capture loop, so lower = faster departure detection but much lower FPS. Must stay below MAX_COAST_FRAMES_STATIONARY or a sitting track dies between checks.
 YOLO_PRESENCE_LOST_LIMIT = 2                                   # Consecutive failed presence checks (YOLO no longer sees the insect at the box) before the track counts as departed.
 
 # --- Save event ---
@@ -114,7 +114,7 @@ YOLO_MATCH_IOU = 0.3                                            # Min IoU betwee
 
 TRACKER_INIT_MAX_AREA_RATIO = 0.15                              # 15% of frame
 TRACKER_MAX_AREA_RATIO = 0.35                                   # >35% of frame = to big for a hornet
-TRACKER_MIN_AREA_RATIO = 0.015                                  # <1.5% = too small to be a hornet at the fixed ~20 cm camera distance (~47k px at 2048x1536). A hornet at the bait fills ~6% of frame; flies/bees are <1%, so this rejects them before they spawn a track and get mislabeled. Lower toward 0.01 if real hornets get filtered, raise if small insects still slip through.
+TRACKER_MIN_AREA_RATIO = 0.008                                  # <0.8% = too small to be a hornet at the fixed ~20 cm camera distance (~25k px at 2048x1536). A hornet at the bait fills ~6% of frame; the fly seen in testing was ~0.5% (~16k), so this still rejects it while leaving margin so a real hornet whose motion box briefly shrinks is not dropped (which fragments the track). Raise toward 0.015 if small insects slip through, lower if hornet tracks fragment.
 TRACKER_MAX_ASPECT_RATIO = 5.0                                  # extreme wide
 TRACKER_MIN_ASPECT_RATIO = 0.2                                  # extreme small  
 TRACKER_EDGE_MARGIN_RATIO = 0.02                                # 2% marge from edge
@@ -125,7 +125,7 @@ MIN_POST_CONFIRM_FRAMES = 6                                     # e.g 6–10
 # -- Motion Settings ---
 MOTION_HISTORY = 300                                            # Amount of frames used for Backgroundmodel (low = faster, high = slower)
 MOTION_VAR_THRESHOLD = 40                                       # Sensibility of motion detection (higher = less sensitive to slow/small movers)
-MOTION_MIN_AREA = 47000                                         # Min pixel area for a relevant motion box. Kept ~= the track spawn min-area (TRACKER_MIN_AREA_RATIO ~47k px), so fly/bee-sized blobs (<1% of frame) never become motion boxes and cannot spawn tracks or steal matches from real hornets.
+MOTION_MIN_AREA = 25000                                         # Min pixel area for a relevant motion box. Kept ~= the track spawn min-area (TRACKER_MIN_AREA_RATIO ~25k px), so fly-sized blobs (~16k) never become motion boxes and cannot spawn tracks or steal matches from real hornets.
 MOTION_KERNEL_SIZE = 5                                          # Size of morphological filtering (larger = erodes small blobs like ants before area check)
 
 
