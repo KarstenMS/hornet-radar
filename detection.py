@@ -5,7 +5,7 @@ import warnings
 from typing import Any, Dict, List
 import cv2
 import torch
-from config import YOLO_DIR, MODEL_DIR, CONFIDENCE_THRESHOLD
+from config import YOLO_DIR, MODEL_DIR, YOLO_CONF_THRESHOLD
 
 logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", category=FutureWarning) # For suppressing Torch FutureWarnings
@@ -20,7 +20,7 @@ def load_model():
         This expects YOLOv5 source code to be available at YOLO_DIR and a weights file at MODEL_DIR.
     """
     model = torch.hub.load(YOLO_DIR, "custom", path=MODEL_DIR, source="local")
-    model.conf = CONFIDENCE_THRESHOLD
+    model.conf = YOLO_CONF_THRESHOLD
     return model
 
 def run_detection(image, model) -> List[Dict[str, Any]]:
