@@ -56,6 +56,7 @@ COLOUR_GAINS = (1.6, 2.0)                                       # (red_gain, blu
 
 # --- Detection Settings ---
 YOLO_CONF_THRESHOLD = 0.30                                      # Inference floor: YOLO discards detections below this BEFORE the pipeline sees them. Keep low so real but lower-confidence detections (e.g. a sitting hornet at an odd angle) are returned and become visible in the debug overlay. Precision is enforced separately by CONFIDENCE_THRESHOLD below.
+YOLO_IMG_SIZE = 640                                             # YOLO inference resolution (longest side; the frame is letterboxed to it). 640 = default/best accuracy. Lower (e.g. 480, 416, 320) roughly scales inference time with the square of the size -> much faster on the Pi, at some accuracy cost. Insects at the bait are large in-frame, so 320-480 usually still detects them.
 CONFIDENCE_THRESHOLD = 0.93                                     # Event/upload gate: only confirmed tracks whose confidence reaches this are saved & uploaded. This is the precision knob; lower it if real hornets are confirmed but not uploaded.
 MAX_YOLO_ATTEMPTS = 8                                           # Max YOLO inferences per track before giving up on confirmation.
 YOLO_RETRY_INTERVAL_FRAMES = 5                                  # Frames to wait between consecutive YOLO attempts (so each retry sees a meaningfully different view).

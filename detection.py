@@ -5,7 +5,7 @@ import warnings
 from typing import Any, Dict, List
 import cv2
 import torch
-from config import YOLO_DIR, MODEL_DIR, YOLO_CONF_THRESHOLD
+from config import YOLO_DIR, MODEL_DIR, YOLO_CONF_THRESHOLD, YOLO_IMG_SIZE
 
 logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", category=FutureWarning) # For suppressing Torch FutureWarnings
@@ -36,7 +36,7 @@ def run_detection(image, model) -> List[Dict[str, Any]]:
     # YOLOv5's hub AutoShape expects RGB for numpy input; frames throughout
     # the pipeline are BGR (cv2 / Picamera2 "RGB888" / cv2.VideoCapture).
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    results = model(rgb)
+    results = model(rgb, size=YOLO_IMG_SIZE)
     predictions = results.pred[0]
 
     return parse_predictions(predictions)
