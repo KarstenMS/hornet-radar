@@ -5,7 +5,7 @@ import warnings
 from typing import Any, Dict, List
 import cv2
 import torch
-from config import YOLO_DIR, MODEL_DIR, YOLO_CONF_THRESHOLD, YOLO_IMG_SIZE
+from config import YOLO_DIR, MODEL_DIR, YOLO_CONF_THRESHOLD, YOLO_IMG_SIZE, YOLO_TORCH_THREADS
 
 logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", category=FutureWarning) # For suppressing Torch FutureWarnings
@@ -19,6 +19,11 @@ def load_model():
     Notes:
         This expects YOLOv5 source code to be available at YOLO_DIR and a weights file at MODEL_DIR.
     """
+    # Cap CPU threads so inference does not starve the real-time capture/tracking
+    # loop (see YOLO_TORCH_THREADS). Must be set before/around model use.
+    if YOLO_TORCH_THREADS:
+        torch.set_num_threads(YOLO_TORCH_THREADS)
+
     model = torch.hub.load(YOLO_DIR, "custom", path=MODEL_DIR, source="local")
     model.conf = YOLO_CONF_THRESHOLD
     return model
