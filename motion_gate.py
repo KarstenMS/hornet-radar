@@ -25,7 +25,7 @@ from config import (
     YOLO_PRESENCE_INTERVAL_FRAMES,
     YOLO_PRESENCE_LOST_LIMIT,
 )
-from detection import load_model, run_detection
+from yolo_worker import YoloWorker
 from track import Track
 from matching import match, iou, center_distance
 from event import DetectionEvent
@@ -50,8 +50,8 @@ class MotionGate:
     """
 
     def __init__(self) -> None:
-        # --- YOLO ---
-        self.model = load_model()
+        # --- YOLO (runs in a background thread; see YoloWorker) ---
+        self.yolo = YoloWorker()
 
         # --- Tracking ---
         self.tracks: List[Track] = []
@@ -72,6 +72,10 @@ class MotionGate:
         # --- FPS (camera only) ---
         self.last_time = time.time()
         self.fps = 0.0
+
+    def close(self) -> None:
+        """Stop the background YOLO worker. Safe to call once at shutdown."""
+        self.yolo.stop()
 
     def process_frame(self, frame, source: FrameSource) -> Tuple[List[DetectionEvent], Dict]:
         """Process one frame and return (events, debug)."""
@@ -113,11 +117,16 @@ class MotionGate:
         # bridge the gaps). It is cheap because MOG2 runs on a downscaled frame.
         motion_boxes = self._update_motion(frame, debug)
 
+        # Apply any finished background YOLO inference to the (living) tracks
+        # BEFORE the kill pass, so mark_present/departed affect this frame.
+        self._apply_yolo_results(debug)
+
         # Associate boxes to tracks, spawn/coast/kill, collect finalized events.
         events = self._update_tracks(frame, motion_boxes, debug)
 
-        # Confirm stable, still-unconfirmed tracks (one shared YOLO call/frame).
-        self._maybe_run_yolo(frame, debug)
+        # Queue a new YOLO inference if a track needs confirmation or a presence
+        # check (non-blocking; the worker runs it in the background).
+        self._submit_yolo(frame, debug)
 
         return events, debug
 
@@ -127,7 +136,7 @@ class MotionGate:
         if self.frame_count % FRAME_SKIP != 0:
             return [], debug
 
-        detections = run_detection(frame, self.model)
+        detections = self.yolo.detect_sync(frame)
         if not detections:
             return [], debug
 
@@ -146,7 +155,7 @@ class MotionGate:
 
     def _process_image(self, frame, debug: Dict) -> Tuple[List[DetectionEvent], Dict]:
         """Image mode: run YOLO once (no tracking)."""
-        detections = run_detection(frame, self.model)
+        detections = self.yolo.detect_sync(frame)
         if not detections:
             return [], debug
 
@@ -287,9 +296,11 @@ class MotionGate:
         ]
         return events
 
-    def _maybe_run_yolo(self, frame, debug: Dict) -> None:
-        """Run at most one YOLO inference per frame for two purposes:
+    def _submit_yolo(self, frame, debug: Dict) -> None:
+        """Queue one background YOLO inference if a track needs it and the worker
+        is free. Non-blocking: results are applied later in _apply_yolo_results.
 
+        Two purposes:
         - confirm still-unconfirmed tracks that are stable or have just landed;
         - presence-check confirmed tracks sitting at the bait, to keep them alive
           across the feeding bout and detect when they depart.
@@ -302,54 +313,80 @@ class MotionGate:
                 t.detection_done = True
                 logger.debug("Track %d gave up YOLO confirmation", t.id)
 
+        if self.yolo.busy():
+            return  # an inference is already in flight; retry once it returns
+
         confirm = [t for t in self.tracks if self._needs_confirmation(t, fc)]
         presence = [t for t in self.tracks if self._needs_presence_check(t, fc)]
         if not confirm and not presence:
             return
 
-        detections = run_detection(frame, self.model)
-        debug["yolo_ran"] = True
-        for t in confirm + presence:
-            t.last_yolo_frame = fc
+        # Snapshot the candidate boxes so the result is matched against the frame
+        # it was computed on, not the (by then moved) current boxes.
+        track_boxes = [(t.id, tuple(t.bbox)) for t in confirm + presence]
+        if not self.yolo.submit(frame.copy(), track_boxes):
+            return  # worker became busy between the check and the submit
 
-        logger.debug(
-            "YOLO ran: %d confirm, %d presence candidate(s), %d detection(s)",
-            len(confirm), len(presence), len(detections),
-        )
-
-        # --- Confirmation: attach the best-overlapping detection to each track,
-        # so it is confirmed by the insect it is actually following, not by
-        # whichever insect in the frame scores highest. ---
         for t in confirm:
             t.yolo_attempts += 1
-            best_det, best_iou = self._best_overlap(t, detections)
-            if best_det is None or best_iou < YOLO_MATCH_IOU:
-                continue
-            self._apply_detection(t, best_det, frame)
-            logger.debug(
-                "Track %d confirmed as %s (%.2f, IoU=%.2f)",
-                t.id, t.confirmed_label, t.confirmed_confidence, best_iou,
-            )
+        for t in confirm + presence:
+            t.last_yolo_frame = fc
+        logger.debug(
+            "YOLO submitted: %d confirm, %d presence candidate(s)",
+            len(confirm), len(presence),
+        )
 
-        # --- Presence: is the confirmed insect still at its box? If yes, keep the
-        # track alive and refresh its (sharp) proof image; if it is gone for
-        # YOLO_PRESENCE_LOST_LIMIT checks in a row, mark it departed. ---
-        for t in presence:
-            best_det, best_iou = self._best_overlap(t, detections)
-            if best_det is not None and best_iou >= YOLO_MATCH_IOU:
-                t.mark_present()
-                t.presence_failures = 0
-                self._apply_detection(t, best_det, frame)  # refresh sharp proof frame
-                logger.debug("Track %d still present (IoU=%.2f)", t.id, best_iou)
-            else:
-                t.presence_failures += 1
-                logger.debug(
-                    "Track %d presence check failed (%d/%d)",
-                    t.id, t.presence_failures, YOLO_PRESENCE_LOST_LIMIT,
-                )
-                if t.presence_failures >= YOLO_PRESENCE_LOST_LIMIT:
-                    t.departed = True
-                    logger.debug("Track %d marked DEPARTED (presence lost)", t.id)
+    def _apply_yolo_results(self, debug: Dict) -> None:
+        """Apply finished background YOLO results to the still-living tracks.
+
+        Detections are matched against each track's snapshot box (from submit
+        time) and applied to the live track by id; tracks that died while the
+        inference ran are simply skipped.
+        """
+        results = self.yolo.poll()
+        if not results:
+            return
+        by_id = {t.id: t for t in self.tracks}
+        for track_boxes, frame, detections in results:
+            debug["yolo_ran"] = True
+            logger.debug(
+                "YOLO result: %d requested box(es), %d detection(s)",
+                len(track_boxes), len(detections),
+            )
+            for tid, snap_bbox in track_boxes:
+                t = by_id.get(tid)
+                if t is None:
+                    continue  # track died while the inference was running
+
+                best_det, best_iou = self._best_overlap(snap_bbox, detections)
+                hit = best_det is not None and best_iou >= YOLO_MATCH_IOU
+
+                if not t.confirmed:
+                    # Confirmation: attach the best-overlapping detection, so the
+                    # track is confirmed by the insect it is actually following.
+                    if hit:
+                        self._apply_detection(t, best_det, frame)
+                        logger.debug(
+                            "Track %d confirmed as %s (%.2f, IoU=%.2f)",
+                            t.id, t.confirmed_label, t.confirmed_confidence, best_iou,
+                        )
+                else:
+                    # Presence: still at its box? keep alive + refresh proof image;
+                    # gone for YOLO_PRESENCE_LOST_LIMIT checks in a row -> departed.
+                    if hit:
+                        t.mark_present()
+                        t.presence_failures = 0
+                        self._apply_detection(t, best_det, frame)
+                        logger.debug("Track %d still present (IoU=%.2f)", t.id, best_iou)
+                    else:
+                        t.presence_failures += 1
+                        logger.debug(
+                            "Track %d presence check failed (%d/%d)",
+                            t.id, t.presence_failures, YOLO_PRESENCE_LOST_LIMIT,
+                        )
+                        if t.presence_failures >= YOLO_PRESENCE_LOST_LIMIT:
+                            t.departed = True
+                            logger.debug("Track %d marked DEPARTED (presence lost)", t.id)
 
     def _needs_confirmation(self, t: Track, fc: int) -> bool:
         """Whether an unconfirmed track should be offered to YOLO this frame."""
@@ -377,14 +414,14 @@ class MotionGate:
         return (fc - t.last_yolo_frame) >= YOLO_PRESENCE_INTERVAL_FRAMES
 
     @staticmethod
-    def _best_overlap(t: Track, detections) -> Tuple:
-        """Return (detection, iou) of the detection best overlapping the track box."""
+    def _best_overlap(bbox, detections) -> Tuple:
+        """Return (detection, iou) of the detection best overlapping `bbox`."""
         best_det = None
         best_iou = 0.0
         for det in detections:
             x1, y1, x2, y2 = det["bbox"]
             det_box = (x1, y1, x2 - x1, y2 - y1)
-            ov = iou(t.bbox, det_box)
+            ov = iou(bbox, det_box)
             if ov > best_iou:
                 best_iou = ov
                 best_det = det

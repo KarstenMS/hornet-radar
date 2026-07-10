@@ -68,7 +68,7 @@ YOLO_RETRY_INTERVAL_FRAMES = 5                                  # Frames to wait
 # still finds the insect at the track's box, the track is kept alive and its proof
 # image is refreshed from the (sharp) sitting frame. When YOLO no longer finds it
 # there, the insect has departed and the track is finalized into one event.
-YOLO_PRESENCE_INTERVAL_FRAMES = 45                             # Re-check a sitting confirmed track with YOLO every N frames (~3 s at 15 FPS). This is the main FPS knob while an insect feeds: each check is a full YOLO inference that briefly stalls the capture loop, so lower = faster departure detection but much lower FPS. Must stay below MAX_COAST_FRAMES_STATIONARY or a sitting track dies between checks.
+YOLO_PRESENCE_INTERVAL_FRAMES = 15                             # Re-check a sitting confirmed track with YOLO every N frames (~1 s at 15 FPS). Since YOLO now runs in a background thread (YoloWorker) this no longer costs FPS, so it is kept low for fast departure detection (fewer lingering "feeding" ghosts). Must stay below MAX_COAST_FRAMES_STATIONARY or a sitting track dies between checks.
 YOLO_PRESENCE_LOST_LIMIT = 2                                   # Consecutive failed presence checks (YOLO no longer sees the insect at the box) before the track counts as departed.
 
 # --- Save event ---

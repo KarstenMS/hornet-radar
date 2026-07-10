@@ -235,12 +235,15 @@ def main():
 
     logger.info("Input source: %s", source.value)
 
-    if source == FrameSource.IMAGE:
-        process_images(motion_gate)
-    elif source == FrameSource.VIDEO:
-        process_videos(motion_gate)
-    else:
-        process_camera(motion_gate)
+    try:
+        if source == FrameSource.IMAGE:
+            process_images(motion_gate)
+        elif source == FrameSource.VIDEO:
+            process_videos(motion_gate)
+        else:
+            process_camera(motion_gate)
+    finally:
+        motion_gate.close()
 
        
 
