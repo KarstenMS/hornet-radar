@@ -28,12 +28,14 @@ def load_model():
     model.conf = YOLO_CONF_THRESHOLD
     return model
 
-def run_detection(image, model) -> List[Dict[str, Any]]:
+def run_detection(image, model, size: int = None) -> List[Dict[str, Any]]:
     """Run YOLO detection on a single image.
 
     Args:
         image: A numpy array (OpenCV image).
         model: The loaded YOLO model.
+        size: Inference resolution (longest side). Defaults to YOLO_IMG_SIZE;
+            a smaller value (e.g. for cheap presence checks) is much faster.
 
     Returns:
         A list of dicts: {bbox, confidence, class_id}.
@@ -41,7 +43,7 @@ def run_detection(image, model) -> List[Dict[str, Any]]:
     # YOLOv5's hub AutoShape expects RGB for numpy input; frames throughout
     # the pipeline are BGR (cv2 / Picamera2 "RGB888" / cv2.VideoCapture).
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    results = model(rgb, size=YOLO_IMG_SIZE)
+    results = model(rgb, size=size or YOLO_IMG_SIZE)
     predictions = results.pred[0]
 
     return parse_predictions(predictions)

@@ -40,18 +40,19 @@ class YoloWorker:
         """Whether a job is currently queued or being processed."""
         return self._in_flight.is_set()
 
-    def submit(self, frame, track_boxes: List[Tuple[int, tuple]]) -> bool:
+    def submit(self, frame, track_boxes: List[Tuple[int, tuple]], size: int = None) -> bool:
         """Queue one inference job. Refused (returns False) while busy.
 
         Args:
             frame: BGR frame to run YOLO on (copied by the caller if needed).
             track_boxes: list of (track_id, bbox) snapshots the caller wants
                 results matched against.
+            size: inference resolution for this job (small = cheap presence check).
         """
         if self._in_flight.is_set():
             return False
         self._in_flight.set()
-        self._requests.put((frame, track_boxes))
+        self._requests.put((frame, track_boxes, size))
         return True
 
     def poll(self) -> List[Tuple[List[Tuple[int, tuple]], Any, list]]:
@@ -78,11 +79,11 @@ class YoloWorker:
     def _run(self) -> None:
         while not self._stop.is_set():
             try:
-                frame, track_boxes = self._requests.get(timeout=0.5)
+                frame, track_boxes, size = self._requests.get(timeout=0.5)
             except queue.Empty:
                 continue
             try:
-                detections = run_detection(frame, self.model)
+                detections = run_detection(frame, self.model, size=size)
             except Exception:
                 logger.exception("YOLO inference failed")
                 detections = []

@@ -24,6 +24,8 @@ from config import (
     YOLO_RETRY_INTERVAL_FRAMES,
     YOLO_PRESENCE_INTERVAL_FRAMES,
     YOLO_PRESENCE_LOST_LIMIT,
+    YOLO_IMG_SIZE,
+    YOLO_PRESENCE_IMG_SIZE,
 )
 from yolo_worker import YoloWorker
 from track import Track
@@ -322,9 +324,12 @@ class MotionGate:
             return
 
         # Snapshot the candidate boxes so the result is matched against the frame
-        # it was computed on, not the (by then moved) current boxes.
+        # it was computed on, not the (by then moved) current boxes. Use the full
+        # resolution when a species must be confirmed; otherwise this is a cheap
+        # presence check for a sitting insect, which runs at a small size.
         track_boxes = [(t.id, tuple(t.bbox)) for t in confirm + presence]
-        if not self.yolo.submit(frame.copy(), track_boxes):
+        size = YOLO_IMG_SIZE if confirm else YOLO_PRESENCE_IMG_SIZE
+        if not self.yolo.submit(frame.copy(), track_boxes, size):
             return  # worker became busy between the check and the submit
 
         for t in confirm:
