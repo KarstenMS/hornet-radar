@@ -4,12 +4,14 @@ import argparse
 import logging
 import os
 import threading
+import time
 import cv2
 from cleanup import cleanup_events
 from config import (
     CAMERA_FPS,
     CONFIDENCE_THRESHOLD,
     DEBUG_DISPLAY_WIDTH,
+    DEBUG_DISPLAY_EVERY_N,
     EVENTS_DIR,
     IMAGES_DIR,
     SHOW_DEBUG_VIDEO,
@@ -97,6 +99,10 @@ def process_camera(motion_gate: MotionGate) -> None:
 
     cam = Camera()
 
+    frame_idx = 0
+    fps_t0 = time.time()
+    fps_n = 0
+
     try:
         while True:
             frame = cam.read()
@@ -104,17 +110,30 @@ def process_camera(motion_gate: MotionGate) -> None:
                 continue
 
             events, debug = motion_gate.process_frame(frame, FrameSource.CAMERA)
+            frame_idx += 1
+            fps_n += 1
 
             for event in events:
                 if event.confidence >= CONFIDENCE_THRESHOLD:
                     save_event(event, event.frame)
                     threading.Thread(target=upload_event, args=(event,), daemon=True).start()
 
-            # --- Optional debug window ---
-            if SHOW_DEBUG_VIDEO:
+            # Log the true loop rate every 5 s. Works with the debug window off,
+            # so it isolates processing speed from the (slow) remote display.
+            now = time.time()
+            if now - fps_t0 >= 5.0:
+                logger.info(
+                    "Loop: %.1f FPS (%d active track(s))",
+                    fps_n / (now - fps_t0), len(debug.get("tracks", []) or []),
+                )
+                fps_t0 = now
+                fps_n = 0
+
+            # --- Optional debug window (decimated: imshow/waitKey over a remote
+            # desktop is slow and would otherwise throttle the whole loop) ---
+            if SHOW_DEBUG_VIDEO and frame_idx % DEBUG_DISPLAY_EVERY_N == 0:
                 # Downscale BEFORE drawing so the (resolution-independent) status
                 # text stays full-size while box coordinates are scaled to match.
-                # A smaller window is far cheaper to stream over Pi Connect.
                 if DEBUG_DISPLAY_WIDTH and frame.shape[1] > DEBUG_DISPLAY_WIDTH:
                     scale = DEBUG_DISPLAY_WIDTH / frame.shape[1]
                     display = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)

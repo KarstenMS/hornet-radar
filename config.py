@@ -10,6 +10,7 @@ LONGITUDE = 00.0
 
 SHOW_DEBUG_VIDEO = True                                         # Shows Debug Video on the PI (requires GUI), default False
 DEBUG_DISPLAY_WIDTH = 960                                        # Downscale the debug window to this width before imshow. Huge bandwidth cut over Pi Connect / remote desktop (the full desktop incl. this window is re-encoded and streamed). Set 0 to show full resolution.
+DEBUG_DISPLAY_EVERY_N = 5                                         # Only render/stream the debug window every Nth frame. cv2.imshow + waitKey over a remote desktop is slow and otherwise throttles the WHOLE processing loop (FPS drops even with an empty frame). Processing still runs every frame; only the display is decimated. 1 = every frame.
 
 # --- Directories ---
 ROOT = "/home/hornet/hornet-radar"
