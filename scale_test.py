@@ -77,7 +77,7 @@ def main():
 
     for f in args.factors:
         test = shrink_and_pad(img, f, fill) if f != 1.0 else img.copy()
-        dets = run_detection(test, model)
+        dets = run_detection(test, model, zoom=1.0)  # zoom=1.0: test does its own shrinking
         dets.sort(key=lambda d: d.get("confidence", 0.0), reverse=True)
 
         parts = []
