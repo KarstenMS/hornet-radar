@@ -26,8 +26,8 @@ EVENTS_DIR = os.path.join(ROOT, "detections", "events")         # Directory for 
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"                                       # "picamera2" | "webcam"
 
-CAMERA_WIDTH = 2048 #1024 2048
-CAMERA_HEIGHT = 1536 #768 1536
+CAMERA_WIDTH = 1920 #1024 2048
+CAMERA_HEIGHT = 1080 #768 1536
 CAMERA_FPS = 15
 
 # Webcam only
@@ -59,8 +59,8 @@ COLOUR_GAINS = (1.6, 2.0)                                       # (red_gain, blu
 YOLO_CONF_THRESHOLD = 0.30                                      # Inference floor: YOLO discards detections below this BEFORE the pipeline sees them. Keep low so real but lower-confidence detections (e.g. a sitting hornet at an odd angle) are returned and become visible in the debug overlay. Precision is enforced separately by CONFIDENCE_THRESHOLD below.
 YOLO_IMG_SIZE = 640                                             # YOLO inference resolution (longest side; the frame is letterboxed to it). 640 = default/best accuracy. Lower (e.g. 480, 416, 320) roughly scales inference time with the square of the size -> much faster on the Pi, at some accuracy cost. Insects at the bait are large in-frame, so 320-480 usually still detects them.
 YOLO_TORCH_THREADS = 2                                          # CPU cores YOLO inference may use. The Pi 5 has 4; capping YOLO at 2 leaves cores free for the real-time capture/tracking loop, so FPS no longer craters to 1-2 during an inference (the inference itself gets a bit slower, which is fine since it runs in the background). Set to 0 to leave the torch default (all cores).
-YOLO_PRESENCE_IMG_SIZE = 320                                    # Inference resolution for the (frequent) presence check of a sitting insect. Only needs "is it still there", so a small size is fine and ~(320/640)^2 = 1/4 the cost of a full detection -> keeps FPS up while an insect feeds. Confirmation still uses the full YOLO_IMG_SIZE for accurate species ID.
-YOLO_ZOOM_OUT = 2.0                                            # Zoom-out before inference: the frame is shrunk by 1/N and padded back to full size with background, so an insect occupies 1/N^2 the frame area. Our close ~15-20 cm camera makes a sitting hornet fill ~6% of the frame -- far bigger than the VespAI training set expects, so it is missed. N=2.0 brings it to ~1.5%, the apparent size at which the model reliably classifies it (see scale_test.py). Detections are mapped back to original coordinates. 1.0 = disabled.
+YOLO_PRESENCE_IMG_SIZE = 448                                    # Inference resolution for the (frequent) presence check of a sitting insect. Smaller than YOLO_IMG_SIZE to stay cheap, but not too small: with YOLO_ZOOM_OUT the insect is already shrunk, and at 320 it became too tiny to re-detect -> false "departed" and the track was dropped mid-feeding. 448 keeps it detectable. Lower again toward 320 for more FPS if presence stays reliable; raise toward 640 if sitting insects are still lost.
+YOLO_ZOOM_OUT = 1.6                                            # Zoom-out before inference: the frame is shrunk by 1/N and padded back to full size with background, so an insect appears 1/N smaller (as if the camera were N times farther). Goal: match the apparent hornet size of the VespAI training data. Calibrated to their 90 mm reference dish (~5.8 px/mm) vs our 1920px/~200mm FOV (~9.6 px/mm) -> N ~= 1.6. Verify per-Pi (depends on the real camera distance): measure a hornet's body length in px in a reference image vs a raw frame, N = ours/reference; or find the peak factor with scale_test.py and set N = 1/f. Detections are mapped back to original coordinates. 1.0 = disabled.
 CONFIDENCE_THRESHOLD = 0.93                                     # Event/upload gate: only confirmed tracks whose confidence reaches this are saved & uploaded. This is the precision knob; lower it if real hornets are confirmed but not uploaded.
 MAX_YOLO_ATTEMPTS = 8                                           # Max YOLO inferences per track before giving up on confirmation.
 YOLO_RETRY_INTERVAL_FRAMES = 5                                  # Frames to wait between consecutive YOLO attempts (so each retry sees a meaningfully different view).
@@ -119,7 +119,7 @@ YOLO_MATCH_IOU = 0.3                                            # Min IoU betwee
 
 TRACKER_INIT_MAX_AREA_RATIO = 0.15                              # 15% of frame
 TRACKER_MAX_AREA_RATIO = 0.35                                   # >35% of frame = to big for a hornet
-TRACKER_MIN_AREA_RATIO = 0.008                                  # <0.8% = too small to be a hornet at the fixed ~20 cm camera distance (~25k px at 2048x1536). A hornet at the bait fills ~6% of frame; the fly seen in testing was ~0.5% (~16k), so this still rejects it while leaving margin so a real hornet whose motion box briefly shrinks is not dropped (which fragments the track). Raise toward 0.015 if small insects slip through, lower if hornet tracks fragment.
+TRACKER_MIN_AREA_RATIO = 0.005                                  # <0.5% = too small to be a hornet. Lowered from 0.008 after the 16:9 switch: the wider full-sensor FOV makes the hornet a smaller FRACTION of the frame, so the old gate started dropping real hornet frames (track fragmented). ~0.5% of 1920x1080 ~= 10k px. Raise if flies/wasps slip through, lower if hornet tracks still fragment.
 TRACKER_MAX_ASPECT_RATIO = 5.0                                  # extreme wide
 TRACKER_MIN_ASPECT_RATIO = 0.2                                  # extreme small  
 TRACKER_EDGE_MARGIN_RATIO = 0.02                                # 2% marge from edge
@@ -130,7 +130,7 @@ MIN_POST_CONFIRM_FRAMES = 6                                     # e.g 6–10
 # -- Motion Settings ---
 MOTION_HISTORY = 300                                            # Amount of frames used for Backgroundmodel (low = faster, high = slower)
 MOTION_VAR_THRESHOLD = 40                                       # Sensibility of motion detection (higher = less sensitive to slow/small movers)
-MOTION_MIN_AREA = 25000                                         # Min pixel area for a relevant motion box. Kept ~= the track spawn min-area (TRACKER_MIN_AREA_RATIO ~25k px), so fly-sized blobs (~16k) never become motion boxes and cannot spawn tracks or steal matches from real hornets.
+MOTION_MIN_AREA = 10000                                         # Min pixel area for a relevant motion box (ABSOLUTE px -> must be retuned when resolution changes!). Kept ~= the track spawn min-area (TRACKER_MIN_AREA_RATIO ~10k px at 1920x1080), so fly-sized blobs never become motion boxes. Lowered from 25000 after the switch to 1920x1080 16:9 (smaller frame + wider FOV made the hornet's motion box smaller, so 25k dropped real hornets). Verify: watch the motion boxes in the debug view / DEBUG log and set this to ~60% of the hornet's actual box area.
 MOTION_KERNEL_SIZE = 5                                          # Size of morphological filtering (larger = erodes small blobs like ants before area check)
 
 
