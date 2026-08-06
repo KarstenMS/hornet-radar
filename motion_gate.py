@@ -14,13 +14,14 @@ from config import (
     MOTION_DOWNSCALE,
     MOTION_HISTORY,
     MOTION_KERNEL_SIZE,
-    MOTION_MIN_AREA,
+    MOTION_MIN_AREA_RATIO,
     MOTION_VAR_THRESHOLD,
     PI_ID,
     TRACKER_INIT_MAX_AREA_RATIO,
     TRACKER_MIN_AREA_RATIO,
     TRACKING_STABLE_FRAMES,
     YOLO_MATCH_IOU,
+    YOLO_MIN_AREA_RATIO,
     YOLO_RETRY_INTERVAL_FRAMES,
     YOLO_PRESENCE_INTERVAL_FRAMES,
     YOLO_PRESENCE_LOST_LIMIT,
@@ -187,12 +188,14 @@ class MotionGate:
         contours, _ = cv2.findContours(fg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         inv = 1.0 / scale
+        fh, fw = frame.shape[:2]
+        min_area = MOTION_MIN_AREA_RATIO * fw * fh  # resolution-independent gate
         boxes = []
         for c in contours:
             x, y, w, h = cv2.boundingRect(c)
             # Scale the box back up to full-resolution coordinates.
             x, y, w, h = int(x * inv), int(y * inv), int(w * inv), int(h * inv)
-            if w * h < MOTION_MIN_AREA:
+            if w * h < min_area:
                 continue
             boxes.append((x, y, w, h))
 
@@ -282,6 +285,7 @@ class MotionGate:
                 ", ".join(self._track_tag(t) for t in self.tracks),
             )
 
+        frame_area = float(fw * fh)
         debug["tracking"] = bool(self.tracks)
         debug["tracks"] = [
             {
@@ -293,6 +297,7 @@ class MotionGate:
                 "coasting": t.misses > 0,
                 "sitting": t.sitting,
                 "departed": t.departed,
+                "area_pct": 100.0 * (t.bbox[2] * t.bbox[3]) / frame_area,
             }
             for t in self.tracks
         ]
@@ -399,6 +404,13 @@ class MotionGate:
             return False
         if t.yolo_attempts >= MAX_YOLO_ATTEMPTS:
             return False
+        # Don't spend a YOLO inference on a track too small to be a hornet
+        # (wasps/flies): they otherwise burn inferences and get mis-confirmed.
+        if t.frame_shape is not None:
+            fh, fw = t.frame_shape
+            _, _, w, h = t.bbox
+            if w * h < YOLO_MIN_AREA_RATIO * fw * fh:
+                return False
         # Ready once it has tracked enough frames OR has just landed at the bait
         # (a sharp, motionless insect is the ideal moment to identify it).
         ready = t.frames_tracked >= TRACKING_STABLE_FRAMES or t.is_stationary_at_bait(

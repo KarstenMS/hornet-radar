@@ -26,8 +26,8 @@ EVENTS_DIR = os.path.join(ROOT, "detections", "events")         # Directory for 
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"                                       # "picamera2" | "webcam"
 
-CAMERA_WIDTH = 1920 #1024 2048
-CAMERA_HEIGHT = 1080 #768 1536
+CAMERA_WIDTH = 1280 #1280 1920 2048
+CAMERA_HEIGHT = 720 #720 1080 1536
 CAMERA_FPS = 15
 
 # Webcam only
@@ -60,8 +60,9 @@ YOLO_CONF_THRESHOLD = 0.30                                      # Inference floo
 YOLO_IMG_SIZE = 640                                             # YOLO inference resolution (longest side; the frame is letterboxed to it). 640 = default/best accuracy. Lower (e.g. 480, 416, 320) roughly scales inference time with the square of the size -> much faster on the Pi, at some accuracy cost. Insects at the bait are large in-frame, so 320-480 usually still detects them.
 YOLO_TORCH_THREADS = 2                                          # CPU cores YOLO inference may use. The Pi 5 has 4; capping YOLO at 2 leaves cores free for the real-time capture/tracking loop, so FPS no longer craters to 1-2 during an inference (the inference itself gets a bit slower, which is fine since it runs in the background). Set to 0 to leave the torch default (all cores).
 YOLO_PRESENCE_IMG_SIZE = 448                                    # Inference resolution for the (frequent) presence check of a sitting insect. Smaller than YOLO_IMG_SIZE to stay cheap, but not too small: with YOLO_ZOOM_OUT the insect is already shrunk, and at 320 it became too tiny to re-detect -> false "departed" and the track was dropped mid-feeding. 448 keeps it detectable. Lower again toward 320 for more FPS if presence stays reliable; raise toward 640 if sitting insects are still lost.
-YOLO_ZOOM_OUT = 1.6                                            # Zoom-out before inference: the frame is shrunk by 1/N and padded back to full size with background, so an insect appears 1/N smaller (as if the camera were N times farther). Goal: match the apparent hornet size of the VespAI training data. Calibrated to their 90 mm reference dish (~5.8 px/mm) vs our 1920px/~200mm FOV (~9.6 px/mm) -> N ~= 1.6. Verify per-Pi (depends on the real camera distance): measure a hornet's body length in px in a reference image vs a raw frame, N = ours/reference; or find the peak factor with scale_test.py and set N = 1/f. Detections are mapped back to original coordinates. 1.0 = disabled.
+YOLO_ZOOM_OUT = 1.33                                           # Zoom-out before inference: the frame is shrunk by 1/N and padded back to full size with background, so an insect appears 1/N smaller (as if the camera were N times farther). Goal: match the apparent hornet size of the VespAI training data. Empirically calibrated with scale_test.py: peak confidence (~95%) at shrink factor 0.75 -> N = 1/0.75 = 1.33. Resolution-independent (it changes the object's FRACTION of the frame, not its pixels), so it does NOT change if you change the camera resolution. Detections are mapped back to original coordinates. 1.0 = disabled.
 CONFIDENCE_THRESHOLD = 0.93                                     # Event/upload gate: only confirmed tracks whose confidence reaches this are saved & uploaded. This is the precision knob; lower it if real hornets are confirmed but not uploaded.
+YOLO_MIN_AREA_RATIO = 0.010                                     # A track must fill at least this FRACTION of the frame to be worth a (expensive) YOLO confirmation. Wasps/flies are far smaller than a hornet, so gating here stops them from burning inferences (the main multi-insect FPS killer) and from being mis-confirmed as EH/AH -- while they still track cheaply via motion. Below the hornet's box size, above a wasp's: tune from the area% now shown per track in the debug view. Raise if wasps still get confirmed, lower if hornets are never offered to YOLO.
 MAX_YOLO_ATTEMPTS = 8                                           # Max YOLO inferences per track before giving up on confirmation.
 YOLO_RETRY_INTERVAL_FRAMES = 5                                  # Frames to wait between consecutive YOLO attempts (so each retry sees a meaningfully different view).
 
@@ -130,7 +131,7 @@ MIN_POST_CONFIRM_FRAMES = 6                                     # e.g 6–10
 # -- Motion Settings ---
 MOTION_HISTORY = 300                                            # Amount of frames used for Backgroundmodel (low = faster, high = slower)
 MOTION_VAR_THRESHOLD = 40                                       # Sensibility of motion detection (higher = less sensitive to slow/small movers)
-MOTION_MIN_AREA = 10000                                         # Min pixel area for a relevant motion box (ABSOLUTE px -> must be retuned when resolution changes!). Kept ~= the track spawn min-area (TRACKER_MIN_AREA_RATIO ~10k px at 1920x1080), so fly-sized blobs never become motion boxes. Lowered from 25000 after the switch to 1920x1080 16:9 (smaller frame + wider FOV made the hornet's motion box smaller, so 25k dropped real hornets). Verify: watch the motion boxes in the debug view / DEBUG log and set this to ~60% of the hornet's actual box area.
+MOTION_MIN_AREA_RATIO = 0.005                                   # Min motion-box area as a FRACTION of the frame (resolution-independent, so changing the camera resolution no longer breaks tracking). ~0.5% keeps a hornet (which fills far more) while rejecting fly-/wasp-sized blobs. Kept ~= TRACKER_MIN_AREA_RATIO. Raise if small insects spawn tracks, lower if hornet tracks fragment.
 MOTION_KERNEL_SIZE = 5                                          # Size of morphological filtering (larger = erodes small blobs like ants before area check)
 
 

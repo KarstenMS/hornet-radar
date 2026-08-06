@@ -201,16 +201,17 @@ def draw_debug_overlay(frame, debug: dict, scale: float = 1.0) -> None:
     for t in tracks:
         x, y, w, h = (int(v * scale) for v in t["bbox"])
 
+        area = t.get("area_pct", 0.0)
         if t.get("confirmed"):
             label = t.get("label", "?")
             conf = (t.get("conf") or 0.0) * 100.0
             color = (0, 0, 255) if label == "AH" else (0, 200, 0)
-            text = f"#{t['id']} {label} {conf:.1f}%"
+            text = f"#{t['id']} {label} {conf:.1f}% [{area:.1f}%]"
             thickness = 3
             font_scale = 0.7
         else:
             color = (255, 200, 0)  # tracked, not yet confirmed
-            text = f"#{t['id']} TRACK"
+            text = f"#{t['id']} TRACK [{area:.1f}%]"
             thickness = 2
             font_scale = 0.5
 
