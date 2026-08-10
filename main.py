@@ -218,7 +218,7 @@ def draw_debug_overlay(frame, debug: dict, scale: float = 1.0) -> None:
         if t.get("departed"):
             text += " (left)"
         elif t.get("sitting"):
-            text += " (feeding)"
+            text += " (sitting)"
         elif t.get("coasting"):
             text += " (coast)"
 
