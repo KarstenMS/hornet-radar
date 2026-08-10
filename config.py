@@ -22,7 +22,7 @@ MODEL_NAME = "yolo5"
 IMAGES_DIR = os.path.join(ROOT, "detections", "images")         # For analyzing single pictures
 VIDEOS_DIR = os.path.join(ROOT, "detections","videos")          # For analyzing videos
 EVENTS_DIR = os.path.join(ROOT, "detections", "events")         # Directory for storing local events
-YOLO_DEBUG_DIR = os.path.join(EVENTS_DIR, "yolo_debug")
+YOLO_DEBUG_DIR = os.path.join(ROOT, "detections", "yolo_debug")
 
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"                                       # "picamera2" | "webcam"
