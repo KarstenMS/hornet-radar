@@ -10,6 +10,8 @@ from config import (
     CAMERA_HEIGHT,
     CAMERA_TYPE,
     CAMERA_WIDTH,
+    CAMERA_FULL_FOV,
+    CAMERA_SCALER_CROP,
     COLOUR_GAINS,
     EXPOSURE_TIME_US,
     FOCUS_DISTANCE_CM,
@@ -69,6 +71,21 @@ class Camera:
             (sensor_h - crop_h) // 2,
             crop_w,
             crop_h,
+        )
+
+        # Manual override to re-centre the view on the bait if needed.
+        if CAMERA_SCALER_CROP is not None:
+            scaler_crop = tuple(CAMERA_SCALER_CROP)
+
+        # Diagnostics: what the sensor offers and which crop we apply. If the
+        # bait is out of frame, compare scaler_crop against the sensor size here.
+        try:
+            mode_sizes = [m.get("size") for m in self.picam2.sensor_modes]
+        except Exception:
+            mode_sizes = "unavailable"
+        logger.info(
+            "Camera %s: sensor=%dx%d, modes=%s, ScalerCrop=%s, full_fov=%s",
+            model, sensor_w, sensor_h, mode_sizes, scaler_crop, CAMERA_FULL_FOV,
         )
 
         # Pin the frame duration to the requested FPS. Without this, auto-
@@ -133,13 +150,20 @@ class Camera:
         else:
             logger.info("Camera %s: fixed focus (no AF support)", model)
 
-        config = self.picam2.create_video_configuration(
+        config_kwargs = dict(
             main={
                 "size": (CAMERA_WIDTH, CAMERA_HEIGHT),
                 "format": PICAM_FORMAT,
             },
-            controls=controls_dict
+            controls=controls_dict,
         )
+        # Read out the full sensor and scale down, so the field of view stays
+        # constant regardless of the requested output resolution (otherwise
+        # Picamera2 may select a cropped mode and the bait leaves the frame).
+        if CAMERA_FULL_FOV:
+            config_kwargs["raw"] = {"size": (sensor_w, sensor_h)}
+
+        config = self.picam2.create_video_configuration(**config_kwargs)
 
         self.picam2.configure(config)
         self.picam2.start()

@@ -26,8 +26,8 @@ EVENTS_DIR = os.path.join(ROOT, "detections", "events")         # Directory for 
 # --- Camera configuration ---
 CAMERA_TYPE = "picamera2"                                       # "picamera2" | "webcam"
 
-CAMERA_WIDTH = 1280 #1280 1920 2048
-CAMERA_HEIGHT = 720 #720 1080 1536
+CAMERA_WIDTH = 1920 #1280 1920 2048
+CAMERA_HEIGHT = 1080 #720 1080 1536
 CAMERA_FPS = 15
 
 # Webcam only
@@ -36,6 +36,8 @@ WEBCAM_INDEX = 0
 # Picamera2 only
 PICAM_FORMAT = "RGB888"                                         # Picamera2 naming is reversed vs numpy: "RGB888" actually yields BGR arrays, matching cv2.VideoCapture.
 FOCUS_DISTANCE_CM = 15                                          # Camera Module 3: focus distance in cm to the target (e.g. hive entrance). Set per-Pi. Ignored on IMX500 (fixed focus).
+CAMERA_FULL_FOV = True                                          # Force full-sensor readout so the field of view does NOT change when CAMERA_WIDTH/HEIGHT change. Without this Picamera2 may pick a cropped/zoomed sensor mode at lower resolutions, shifting the (centred) bait out of the preview. May cap FPS on the biggest sensor mode; set False to let Picamera2 pick the fastest mode (FOV then depends on resolution).
+CAMERA_SCALER_CROP = None                                       # Manual sensor crop (x, y, w, h) in FULL-sensor pixels, overriding the auto centred crop. None = auto (centred to the output aspect). Use to re-centre the view on the bait if the camera mount is slightly off. The applied crop and sensor size are logged at startup.
 
 # --- Exposure ---
 # The frame duration is pinned to CAMERA_FPS (FrameDurationLimits), so the
