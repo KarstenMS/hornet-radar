@@ -63,25 +63,25 @@ def save_event(event: DetectionEvent, frame) -> Optional[str]:
         # Project-specific mapping: 1 => Asian Hornet, else European Hornet
         label = "AH" if d["class_id"] == 1 else "EH"
         if label == "AH":
-            cv2.rectangle(labeled, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.rectangle(labeled, (x1, y1), (x2, y2), (0, 0, 255), 2)
             cv2.putText(
                 labeled,
                 f"{label} {conf}",
                 (x1, max(y1 - 6, 10)),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
-                (0, 255, 0),
+                (0, 0, 255),
                 2
             )
         else:
-            cv2.rectangle(labeled, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            cv2.rectangle(labeled, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(
                 labeled,
                 f"{label} {conf}",
                 (x1, max(y1 - 6, 10)),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
-            (0, 0, 255),
+            (0, 255, 0),
             2
         )
 
