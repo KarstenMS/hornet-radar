@@ -1,6 +1,7 @@
 """Hornet Radar: YOLO model loading and inference utilities."""
 
 import logging
+import os
 import warnings
 from typing import Any, Dict, List
 import cv2
@@ -13,9 +14,11 @@ from config import (
     YOLO_IMG_SIZE,
     YOLO_TORCH_THREADS,
     YOLO_ZOOM_OUT,
+    YOLO_DEBUG_DIR,
 )
 
 logger = logging.getLogger(__name__)
+_debug_dump_count = 0  # sequential index for YOLO_DEBUG_DIR dumps
 warnings.filterwarnings("ignore", category=FutureWarning) # For suppressing Torch FutureWarnings
 
 def load_model():
@@ -66,9 +69,38 @@ def run_detection(image, model, size: int = None, zoom: float = None) -> List[Di
     predictions = results.pred[0]
     detections = parse_predictions(predictions)
 
+    # Save exactly what YOLO received (the zoomed frame) with its raw boxes, to
+    # verify the apparent size / scores match what scale_test.py predicts.
+    if YOLO_DEBUG_DIR:
+        _dump_yolo_input(rgb, detections, size or YOLO_IMG_SIZE, zoom)
+
     if remap is not None:
         detections = _remap_detections(detections, remap, image.shape[:2])
     return detections
+
+
+def _dump_yolo_input(rgb, detections, size, zoom) -> None:
+    """Write the (zoomed) YOLO input with its detections drawn, for diagnosis."""
+    global _debug_dump_count
+    try:
+        os.makedirs(YOLO_DEBUG_DIR, exist_ok=True)
+        vis = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        fh, fw = vis.shape[:2]
+        for d in detections:
+            x1, y1, x2, y2 = d["bbox"]  # canvas coords = what YOLO saw
+            label = "AH" if d.get("class_id") == 1 else "EH"
+            conf = float(d.get("confidence", 0.0))
+            area_pct = 100.0 * (x2 - x1) * (y2 - y1) / (fw * fh)
+            color = (0, 0, 255) if label == "AH" else (0, 200, 0)
+            cv2.rectangle(vis, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(vis, f"{label} {conf:.2f} {area_pct:.1f}%", (x1, max(y1 - 6, 12)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+        cv2.putText(vis, f"size={size} zoom={zoom}", (10, fh - 12),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+        _debug_dump_count += 1
+        cv2.imwrite(os.path.join(YOLO_DEBUG_DIR, f"yolo_{_debug_dump_count:05d}.jpg"), vis)
+    except Exception:
+        logger.exception("YOLO debug dump failed")
 
 
 def _zoom_out(rgb, zoom: float):
