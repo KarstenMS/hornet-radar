@@ -14,6 +14,7 @@ from config import (
     MOTION_DOWNSCALE,
     MOTION_HISTORY,
     MOTION_KERNEL_SIZE,
+    MOTION_CLOSE_KERNEL_SIZE,
     MOTION_MIN_AREA_RATIO,
     MOTION_VAR_THRESHOLD,
     PI_ID,
@@ -70,6 +71,14 @@ class MotionGate:
         )
         self.kernel = cv2.getStructuringElement(
             cv2.MORPH_ELLIPSE, (MOTION_KERNEL_SIZE, MOTION_KERNEL_SIZE)
+        )
+        # Larger kernel to CLOSE gaps so one insect's parts merge into one box.
+        self.close_kernel = (
+            cv2.getStructuringElement(
+                cv2.MORPH_ELLIPSE, (MOTION_CLOSE_KERNEL_SIZE, MOTION_CLOSE_KERNEL_SIZE)
+            )
+            if MOTION_CLOSE_KERNEL_SIZE
+            else None
         )
 
         # --- FPS (camera only) ---
@@ -183,7 +192,9 @@ class MotionGate:
             small = frame
 
         fg = self.bg_subtractor.apply(small)
-        fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, self.kernel)
+        fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, self.kernel)   # drop speckle
+        if self.close_kernel is not None:
+            fg = cv2.morphologyEx(fg, cv2.MORPH_CLOSE, self.close_kernel)  # merge one insect's parts
 
         contours, _ = cv2.findContours(fg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
