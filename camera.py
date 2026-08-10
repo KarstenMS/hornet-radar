@@ -73,9 +73,16 @@ class Camera:
             crop_h,
         )
 
-        # Manual override to re-centre the view on the bait if needed.
+        # Only apply a ScalerCrop when it is a GENUINE sub-crop (e.g. cutting a
+        # 16:9 sensor to a 4:3 output). Setting a full-sensor crop explicitly
+        # confuses libcamera in a binned mode and yields a wrong region (bait
+        # off-frame), so in the full-FOV case we omit it and let libcamera use
+        # its default full crop. A manual override always wins.
         if CAMERA_SCALER_CROP is not None:
             scaler_crop = tuple(CAMERA_SCALER_CROP)
+            apply_crop = True
+        else:
+            apply_crop = crop_w < sensor_w or crop_h < sensor_h
 
         # Diagnostics: what the sensor offers and which crop we apply. If the
         # bait is out of frame, compare scaler_crop against the sensor size here.
@@ -83,9 +90,10 @@ class Camera:
             mode_sizes = [m.get("size") for m in self.picam2.sensor_modes]
         except Exception:
             mode_sizes = "unavailable"
+        crop_max = self.picam2.camera_properties.get("ScalerCropMaximum")
         logger.info(
-            "Camera %s: sensor=%dx%d, modes=%s, ScalerCrop=%s, full_fov=%s",
-            model, sensor_w, sensor_h, mode_sizes, scaler_crop, CAMERA_FULL_FOV,
+            "Camera %s: sensor=%dx%d, modes=%s, ScalerCropMaximum=%s, ScalerCrop=%s (applied=%s), full_fov=%s",
+            model, sensor_w, sensor_h, mode_sizes, crop_max, scaler_crop, apply_crop, CAMERA_FULL_FOV,
         )
 
         # Pin the frame duration to the requested FPS. Without this, auto-
@@ -96,9 +104,10 @@ class Camera:
 
         controls_dict = {
             "FrameDurationLimits": (frame_us, frame_us),
-            "ScalerCrop": scaler_crop,
             "AwbEnable": AWB_ENABLE,
         }
+        if apply_crop:
+            controls_dict["ScalerCrop"] = scaler_crop
 
         # Exposure: manual (short = motion-frozen) if configured, else auto-
         # exposure bounded by the frame budget above.
